@@ -1,40 +1,61 @@
+#!/bin/bash
+# =============================================================
+# setup.sh — Bolirana Backend (Linux / macOS)
+# Prepara el entorno por primera vez y levanta la aplicación.
+# Requisitos: Docker, Java 17+, Maven
+# =============================================================
+
 set -e
 
-echo "Iniciando setup profesional (Java/Spring Boot)..."
+# -------------------------------------------------------------
+# BLOQUE 1: Cargar variables de entorno desde el archivo .env
+# -------------------------------------------------------------
+echo ">>> Cargando variables de entorno..."
 
-if [ -f .env ]; then
-  echo "Cargando variables desde .env..."
-  set -a
-  source .env
-  set +a
-else
-  echo "No se encontró el archivo .env."
+if [ ! -f ".env" ]; then
+  echo "ERROR: No se encontró el archivo .env en la raíz del proyecto."
+  echo "       Copia env.example a .env y completa los valores."
   exit 1
 fi
 
-echo "Levantando PostgreSQL..."
-docker compose down -v
+set -a
+source .env
+set +a
+
+echo "    Variables cargadas correctamente."
+
+# -------------------------------------------------------------
+# BLOQUE 2: Levantar la base de datos con Docker Compose
+# -------------------------------------------------------------
+echo ">>> Levantando base de datos PostgreSQL en Docker..."
+
+docker compose down --remove-orphans
 docker compose up -d
 
+echo "    Contenedor iniciado. Spring Boot reintentará la conexión automáticamente."
 
-echo "Esperando a que PostgreSQL acepte conexiones..."
-until docker exec "$PG_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
-  sleep 1
-done
-echo "PostgreSQL está listo."
+# -------------------------------------------------------------
+# BLOQUE 3: Instalar dependencias y compilar con Maven
+# -------------------------------------------------------------
+echo ">>> Compilando proyecto con Maven (sin ejecutar tests)..."
 
+chmod +x mvnw
+./mvnw clean install -DskipTests
 
-echo "Verificando dependencias de Maven..."
-if [ -f "mvnw" ]; then
-  chmod +x mvnw
-  ./mvnw clean install -DskipTests
-else
-  echo "No se encontró mvnw. Asegúrate de estar en la raíz del proyecto Java."
-  exit 1
-fi
+echo "    Compilación exitosa."
 
+# -------------------------------------------------------------
+# BLOQUE 4: Ejecutar pruebas básicas
+# -------------------------------------------------------------
+echo ">>> Ejecutando pruebas básicas..."
 
-echo "Ejecutando verificación de base de datos..."
-docker exec -i "$PG_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();"
+./mvnw test
 
-echo "Setup finalizado correctamente. Entorno listo."
+echo "    Pruebas completadas."
+
+# -------------------------------------------------------------
+# BLOQUE 5: Levantar la aplicación
+# -------------------------------------------------------------
+echo ">>> Iniciando el servidor en http://localhost:${PORT:-8080}"
+
+./mvnw spring-boot:run

@@ -1,44 +1,80 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal EnableDelayedExpansion
 
+REM =============================================================
+REM setup.bat — Bolirana Backend (Windows)
+REM Prepara el entorno por primera vez y levanta la aplicación.
+REM Requisitos: Docker Desktop, Java 17+, Maven
+REM =============================================================
 
-if exist .env (
-    echo [1/5] Cargando variables desde .env...
-    for /f "tokens=*" %%i in (.env) do set %%i
-) else (
-    echo [ERROR] No se encontro el archivo .env
-    pause
+REM -------------------------------------------------------------
+REM BLOQUE 1: Cargar variables de entorno desde el archivo .env
+REM -------------------------------------------------------------
+echo ^>^>^> Cargando variables de entorno...
+
+if not exist ".env" (
+    echo ERROR: No se encontro el archivo .env en la raiz del proyecto.
+    echo        Copia env.example a .env y completa los valores.
     exit /b 1
 )
 
+for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
+    set "line=%%A"
+    if not "!line!"=="" (
+        echo !line! | findstr /r "^[^#]" >nul 2>&1
+        if !errorlevel!==0 set "%%A=%%B"
+    )
+)
 
-echo [2/5] Levantando PostgreSQL...
-docker compose down -v
+echo     Variables cargadas correctamente.
+
+REM -------------------------------------------------------------
+REM BLOQUE 2: Levantar la base de datos con Docker Compose
+REM -------------------------------------------------------------
+echo ^>^>^> Levantando base de datos PostgreSQL en Docker...
+
+docker compose down --remove-orphans
 docker compose up -d
 
-
-echo [3/5] Esperando a que PostgreSQL acepte conexiones...
-:wait_loop
-docker exec %PG_CONTAINER% pg_isready -U %DB_USER% -d %DB_NAME% >nul 2>&1
 if !errorlevel! neq 0 (
-    timeout /t 1 >nul
-    goto wait_loop
-)
-echo [OK] PostgreSQL esta listo.
-
-
-echo [4/5] Verificando dependencias y compilando con Maven...
-if exist mvnw (
-    call .\mvnw clean install -DskipTests
-) else (
-    echo [ERROR] No se encontro el archivo mvnw en la raiz.
+    echo ERROR: Fallo al iniciar docker compose.
     exit /b 1
 )
 
+echo     Contenedor iniciado. Spring Boot reintentara la conexion automaticamente.
 
-echo [5/5] Ejecutando pruebas de salud del contenedor...
-docker exec %PG_CONTAINER% psql -U %DB_USER% -d %DB_NAME% -c "SELECT 1;"
+REM -------------------------------------------------------------
+REM BLOQUE 3: Instalar dependencias y compilar con Maven
+REM -------------------------------------------------------------
+echo ^>^>^> Compilando proyecto con Maven (sin ejecutar tests)...
 
-echo ===========================================================
-echo [EXITO] Entorno Java/Spring listo para usar.
-pause
+call mvnw.cmd clean install -DskipTests
+
+if !errorlevel! neq 0 (
+    echo ERROR: Fallo la compilacion con Maven.
+    exit /b 1
+)
+
+echo     Compilacion exitosa.
+
+REM -------------------------------------------------------------
+REM BLOQUE 4: Ejecutar pruebas básicas
+REM -------------------------------------------------------------
+echo ^>^>^> Ejecutando pruebas basicas...
+
+call mvnw.cmd test
+
+if !errorlevel! neq 0 (
+    echo ADVERTENCIA: Algunas pruebas fallaron. Revisa el reporte en target/surefire-reports
+)
+
+echo     Pruebas completadas.
+
+REM -------------------------------------------------------------
+REM BLOQUE 5: Levantar la aplicación
+REM -------------------------------------------------------------
+echo ^>^>^> Iniciando el servidor en http://localhost:8080
+
+call mvnw.cmd spring-boot:run
+
+endlocal

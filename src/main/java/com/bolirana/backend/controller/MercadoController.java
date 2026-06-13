@@ -21,11 +21,18 @@ public class MercadoController {
 
     private final MercadoService mercadoService;
 
+    /** Retorna la lista de todos los mercados registrados en el sistema. */
     @GetMapping
     public List<Mercado> listar() {
         return mercadoService.listar();
     }
 
+    /**
+     * Busca un mercado por su identificador.
+     *
+     * @param id identificador del mercado
+     * @return 200 con el mercado si existe, 404 si no se encuentra
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Mercado> buscarPorId(@PathVariable Long id) {
         return mercadoService.buscarPorId(id)
@@ -33,6 +40,12 @@ public class MercadoController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * Crea un nuevo mercado.
+     *
+     * @param mercado datos del mercado a crear
+     * @return 201 con el mercado creado
+     */
     @PostMapping
     public ResponseEntity<Mercado> crear(@RequestBody Mercado mercado) {
         Mercado creado = mercadoService.crear(mercado);

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+  "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+  "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<module name="Checker">
+  <module name="TreeWalker">
+    <!-- Javadoc en métodos públicos -->
+    <module name="MissingJavadocMethod">
+      <property name="scope" value="public"/>
+    </module>
+    <!-- Nombres de clases en PascalCase -->
+    <module name="TypeName"/>
+    <!-- Nombres de métodos en camelCase -->
+    <module name="MethodName"/>
+    <!-- Nombres de constantes en UPPER_SNAKE_CASE -->
+    <module name="ConstantName"/>
+    <!-- Llaves de apertura en la misma línea -->
+    <module name="LeftCurly"/>
+    <!-- Llaves de cierre con else en la misma línea -->
+    <module name="RightCurly"/>
+    <!-- Sin imports con wildcard (import java.util.*) -->
+    <module name="AvoidStarImport"/>
+    <!-- Espacios después de comas -->
+    <module name="WhitespaceAfter"/>
+    <!-- Sin espacios en blanco vacíos al final de línea -->
+    <module name="Regexp">
+      <property name="format" value="[ \t]+$"/>
+      <property name="illegalPattern" value="true"/>
+      <property name="message" value="Trailing whitespace"/>
+    </module>
+    <!-- Modificadores en orden correcto (public static final) -->
+    <module name="ModifierOrder"/>
+    <!-- Variables locales en camelCase -->
+    <module name="LocalVariableName"/>
+    <!-- Parámetros en camelCase -->
+    <module name="ParameterName"/>
+  </module>
+  <!-- Líneas no deben superar 120 caracteres -->
+  <module name="LineLength">
+    <property name="max" value="120"/>
+  </module>
+  <!-- Archivos terminan con nueva línea -->
+  <module name="NewlineAtEndOfFile">
+    <property name="lineSeparator" value="lf_cr_crlf"/>
+  </module>
+</module>

@@ -21,11 +21,18 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    /** Retorna la lista de todos los usuarios registrados en el sistema. */
     @GetMapping
     public List<Usuario> listar() {
         return usuarioService.listar();
     }
 
+    /**
+     * Busca un usuario por su identificador.
+     *
+     * @param id identificador del usuario
+     * @return 200 con el usuario si existe, 404 si no se encuentra
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id) {
         return usuarioService.buscarPorId(id)
@@ -33,6 +40,12 @@ public class UsuarioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * Crea un nuevo usuario.
+     *
+     * @param usuario datos del usuario a crear
+     * @return 201 con el usuario creado
+     */
     @PostMapping
     public ResponseEntity<Usuario> crear(@RequestBody Usuario usuario) {
         Usuario creado = usuarioService.crear(usuario);

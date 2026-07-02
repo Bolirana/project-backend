@@ -43,6 +43,9 @@ public class Usuario {
     @Column(name = "estado")
     private String estado;
 
+    @Column(name = "saldo")
+    private Double saldo = 0.0;
+
     @CreationTimestamp
     @Column(name = "creado_en", updatable = false)
     private LocalDateTime creadoEn;

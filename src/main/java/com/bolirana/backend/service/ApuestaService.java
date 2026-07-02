@@ -49,11 +49,17 @@ public class ApuestaService {
      *
      * @param apuesta datos de la apuesta a registrar
      * @return la apuesta creada y persistida
-     * @throws IllegalArgumentException si la opción de apuesta no existe
+     * @throws IllegalArgumentException si la opción de apuesta no existe o si el evento
+     *         asociado no está en estado ABIERTO
      */
     public Apuesta crear(Apuesta apuesta) {
         OpcionApuesta opcion = opcionApuestaRepository.findById(apuesta.getOpcion().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Opcion de apuesta no encontrada"));
+
+        String estadoEvento = opcion.getMercado().getEvento().getEstado();
+        if (!"ABIERTO".equals(estadoEvento)) {
+            throw new IllegalArgumentException("No se puede apostar: el evento no está ABIERTO");
+        }
 
         apuesta.setOpcion(opcion);
         apuesta.setCuotaCongelada(opcion.getCuotaActual());

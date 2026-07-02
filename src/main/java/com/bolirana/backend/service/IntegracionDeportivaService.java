@@ -1,9 +1,9 @@
-package com.example.eventos.service;
+package com.bolirana.backend.service;
 
-import com.example.eventos.client.OddsApiClient;
-import com.example.eventos.client.TheSportsDbClient;
-import com.example.eventos.client.dto.OddsApiEventoDTO;
-import com.example.eventos.client.dto.TheSportsDbEventoDTO;
+import com.bolirana.backend.client.OddsApiClient;
+import com.bolirana.backend.client.TheSportsDbClient;
+import com.bolirana.backend.client.dto.OddsApiEventoDTO;
+import com.bolirana.backend.client.dto.TheSportsDbEventoDTO;
 import org.springframework.stereotype.Service;
 
 /**

@@ -1,6 +1,6 @@
-package com.example.eventos.dto;
+package com.bolirana.backend.dto;
 
-import com.example.eventos.enums.EstadoEvento;
+import com.bolirana.backend.enums.EstadoEvento;
 import jakarta.validation.constraints.NotNull;
 
 /** RF-05 / RF-16: DTO para solicitar el cambio de estado de un evento. */

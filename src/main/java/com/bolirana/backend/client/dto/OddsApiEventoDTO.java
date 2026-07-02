@@ -1,4 +1,4 @@
-package com.example.eventos.client.dto;
+package com.bolirana.backend.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

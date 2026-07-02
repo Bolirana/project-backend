@@ -1,4 +1,4 @@
-package com.example.eventos.exception;
+package com.bolirana.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

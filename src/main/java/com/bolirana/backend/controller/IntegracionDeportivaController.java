@@ -1,8 +1,8 @@
-package com.example.eventos.controller;
+package com.bolirana.backend.controller;
 
-import com.example.eventos.client.dto.OddsApiEventoDTO;
-import com.example.eventos.client.dto.TheSportsDbEventoDTO;
-import com.example.eventos.service.IntegracionDeportivaService;
+import com.bolirana.backend.client.dto.OddsApiEventoDTO;
+import com.bolirana.backend.client.dto.TheSportsDbEventoDTO;
+import com.bolirana.backend.service.IntegracionDeportivaService;
 import org.springframework.web.bind.annotation.*;
 
 /**

@@ -1,4 +1,4 @@
-package com.example.eventos.exception;
+package com.bolirana.backend.exception;
 
 public class RecursoNoEncontradoException extends RuntimeException {
     public RecursoNoEncontradoException(String message) {

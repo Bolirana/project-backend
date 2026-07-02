@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import com.bolirana.backend.enums.EstadoEvento;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "evento")
 @Data
-@NoArgsConstructor
+//@NoArgsConstructor
 @AllArgsConstructor
 public class Evento {
 

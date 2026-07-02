@@ -1,19 +1,18 @@
-package com.example.eventos.model;
+package com.bolirana.backend.domain;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * RF-23: Cada cambio de cuota debe quedar registrado indicando
- * la cuota anterior y la nueva, para poder consultarlo después.
- *
- * Mapeo alineado a la tabla `historial_cuota` de la base de datos del grupo,
- * que incluye además el campo `origen` (MANUAL | SUGERENCIA_MOTOR_RIESGO).
- * Para los cambios realizados por el Administrador vía RF-23, el origen
- * siempre será MANUAL.
- */
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+
 @Entity
+@AllArgsConstructor
 @Table(name = "historial_cuota")
 public class HistorialCambioCuota {
 

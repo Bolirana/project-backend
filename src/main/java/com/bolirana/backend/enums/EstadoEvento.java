@@ -1,4 +1,4 @@
-package com.example.eventos.enums;
+package com.bolirana.backend.enums;
 
 /**
  * RF-05: Un evento debe pasar por los estados CREADO, ABIERTO,

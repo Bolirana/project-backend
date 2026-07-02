@@ -1,4 +1,4 @@
-package com.example.eventos.client;
+package com.bolirana.backend.client;
 
 import com.example.eventos.client.dto.OddsApiEventoDTO;
 import org.springframework.beans.factory.annotation.Value;

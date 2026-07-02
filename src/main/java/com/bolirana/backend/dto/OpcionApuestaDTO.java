@@ -1,4 +1,4 @@
-package com.example.eventos.dto;
+package com.bolirana.backend.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -8,11 +8,11 @@ import java.math.BigDecimal;
 
 public class OpcionApuestaDTO {
 
-    @NotBlank(message = "El nombre de la opción de apuesta es obligatorio")
+    @NotBlank(message = "El nombre de la opcion de apuesta es obligatorio")
     private String nombre;
 
     /**
-     * Cuota de referencia obtenida desde The Odds API (opcional, solo guía
+     * Cuota de referencia obtenida desde The Odds API (opcional, solo guia
      * para el Administrador). NO se persiste en la base de datos.
      */
     @DecimalMin(value = "1.0", inclusive = false, message = "La cuota de referencia debe ser mayor a 1.0")

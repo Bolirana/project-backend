@@ -1,4 +1,4 @@
-package com.example.eventos.dto;
+package com.bolirana.backend.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;

@@ -1,6 +1,6 @@
-package com.example.eventos.dto;
+package com.bolirana.backend.dto;
 
-import com.example.eventos.model.HistorialCambioCuota;
+import com.bolirana.backend.model.HistorialCuota;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

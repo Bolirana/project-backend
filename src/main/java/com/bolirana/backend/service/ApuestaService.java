@@ -1,6 +1,7 @@
 package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Apuesta;
+import com.bolirana.backend.domain.EstadoApuesta;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.repository.ApuestaRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
@@ -44,7 +45,7 @@ public class ApuestaService {
 
     /**
      * Registra una nueva apuesta, congelando la cuota vigente de la opción
-     * seleccionada y marcando la apuesta como pendiente.
+     * seleccionada y marcando la apuesta como registrada.
      *
      * @param apuesta datos de la apuesta a registrar
      * @return la apuesta creada y persistida
@@ -56,7 +57,7 @@ public class ApuestaService {
 
         apuesta.setOpcion(opcion);
         apuesta.setCuotaCongelada(opcion.getCuotaActual());
-        apuesta.setEstado("PENDIENTE");
+        apuesta.setEstado(EstadoApuesta.REGISTRADA);
 
         return apuestaRepository.save(apuesta);
     }

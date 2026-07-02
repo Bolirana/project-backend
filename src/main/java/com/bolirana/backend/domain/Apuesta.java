@@ -2,6 +2,8 @@ package com.bolirana.backend.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,8 +42,9 @@ public class Apuesta {
     @Column(name = "cuota_congelada")
     private Double cuotaCongelada;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado")
-    private String estado;
+    private EstadoApuesta estado;
 
     @CreationTimestamp
     @Column(name = "creado_en", updatable = false)

@@ -1,6 +1,7 @@
 package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Apuesta;
+import com.bolirana.backend.domain.EstadoApuesta;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.repository.ApuestaRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
@@ -52,9 +53,9 @@ class ApuestaServiceTest {
     }
 
     @Test
-    @DisplayName("crear() inicializa el estado de la apuesta en PENDIENTE")
-    void crear_opcionExistente_inicializaEstadoPendiente() {
-        // Caso límite: el estado inicial siempre debe ser PENDIENTE sin importar lo que el cliente envíe
+    @DisplayName("crear() inicializa el estado de la apuesta en REGISTRADA")
+    void crear_opcionExistente_inicializaEstadoRegistrada() {
+        // Caso límite: el estado inicial siempre debe ser REGISTRADA sin importar lo que el cliente envíe
         OpcionApuesta opcion = new OpcionApuesta();
         opcion.setId(2L);
         opcion.setCuotaActual(1.8);
@@ -68,7 +69,7 @@ class ApuestaServiceTest {
 
         Apuesta resultado = apuestaService.crear(apuesta);
 
-        assertThat(resultado.getEstado()).isEqualTo("PENDIENTE");
+        assertThat(resultado.getEstado()).isEqualTo(EstadoApuesta.REGISTRADA);
     }
 
     @Test

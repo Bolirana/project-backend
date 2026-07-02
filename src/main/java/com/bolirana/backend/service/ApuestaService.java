@@ -93,4 +93,59 @@ public class ApuestaService {
 
         return apuestaGuardada;
     }
+
+    /**
+     * Resuelve una apuesta registrada, transicionándola a GANADA o PERDIDA.
+     *
+     * @param apuestaId identificador de la apuesta a resolver
+     * @param resultado resultado de la apuesta, debe ser GANADA o PERDIDA
+     * @return la apuesta actualizada
+     * @throws IllegalArgumentException si la apuesta no existe, si el resultado no es
+     *         GANADA ni PERDIDA, o si la apuesta no está en estado REGISTRADA
+     */
+    @Transactional
+    public Apuesta resolver(Long apuestaId, EstadoApuesta resultado) {
+        if (resultado != EstadoApuesta.GANADA && resultado != EstadoApuesta.PERDIDA) {
+            throw new IllegalArgumentException("El resultado debe ser GANADA o PERDIDA");
+        }
+
+        Apuesta apuesta = apuestaRepository.findById(apuestaId)
+                .orElseThrow(() -> new IllegalArgumentException("Apuesta no encontrada"));
+
+        if (apuesta.getEstado() != EstadoApuesta.REGISTRADA) {
+            throw new IllegalArgumentException("Solo se puede resolver una apuesta en estado REGISTRADA");
+        }
+
+        apuesta.setEstado(resultado);
+        return apuestaRepository.save(apuesta);
+    }
+
+    /**
+     * Paga una apuesta ganada: acredita al apostador el monto por la cuota
+     * congelada y transiciona la apuesta a PAGADA.
+     *
+     * @param apuestaId identificador de la apuesta a pagar
+     * @return la apuesta actualizada
+     * @throws IllegalArgumentException si la apuesta no existe o no está en estado GANADA
+     */
+    @Transactional
+    public Apuesta pagar(Long apuestaId) {
+        Apuesta apuesta = apuestaRepository.findById(apuestaId)
+                .orElseThrow(() -> new IllegalArgumentException("Apuesta no encontrada"));
+
+        if (apuesta.getEstado() != EstadoApuesta.GANADA) {
+            throw new IllegalArgumentException("Solo se puede pagar una apuesta en estado GANADA");
+        }
+
+        double montoAPagar = apuesta.getMonto() * apuesta.getCuotaCongelada();
+
+        MovimientoSaldo movimiento = new MovimientoSaldo();
+        movimiento.setUsuario(apuesta.getApostador());
+        movimiento.setTipo("PAGO_APUESTA");
+        movimiento.setMonto(montoAPagar);
+        movimientoSaldoService.crear(movimiento);
+
+        apuesta.setEstado(EstadoApuesta.PAGADA);
+        return apuestaRepository.save(apuesta);
+    }
 }

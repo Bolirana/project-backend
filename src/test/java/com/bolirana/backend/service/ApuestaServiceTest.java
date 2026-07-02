@@ -230,4 +230,128 @@ class ApuestaServiceTest {
         assertThat(captor.getValue().getMonto()).isEqualTo(8000.0);
         assertThat(captor.getValue().getUsuario()).isEqualTo(apostador);
     }
+
+    private static Apuesta apuestaConEstado(Long id, EstadoApuesta estado, Usuario apostador, Double monto,
+            Double cuotaCongelada) {
+        Apuesta apuesta = new Apuesta();
+        apuesta.setId(id);
+        apuesta.setEstado(estado);
+        apuesta.setApostador(apostador);
+        apuesta.setMonto(monto);
+        apuesta.setCuotaCongelada(cuotaCongelada);
+        return apuesta;
+    }
+
+    @Test
+    @DisplayName("resolver() transiciona una apuesta REGISTRADA a GANADA")
+    void resolver_apuestaRegistrada_transicionaAGanada() {
+        Apuesta apuesta = apuestaConEstado(1L, EstadoApuesta.REGISTRADA, apostadorConSaldo(1L, 10000.0), 5000.0, 2.0);
+
+        when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+        when(apuestaRepository.save(apuesta)).thenReturn(apuesta);
+
+        Apuesta resultado = apuestaService.resolver(1L, EstadoApuesta.GANADA);
+
+        assertThat(resultado.getEstado()).isEqualTo(EstadoApuesta.GANADA);
+    }
+
+    @Test
+    @DisplayName("resolver() transiciona una apuesta REGISTRADA a PERDIDA")
+    void resolver_apuestaRegistrada_transicionaAPerdida() {
+        Apuesta apuesta = apuestaConEstado(2L, EstadoApuesta.REGISTRADA, apostadorConSaldo(1L, 10000.0), 5000.0, 2.0);
+
+        when(apuestaRepository.findById(2L)).thenReturn(Optional.of(apuesta));
+        when(apuestaRepository.save(apuesta)).thenReturn(apuesta);
+
+        Apuesta resultado = apuestaService.resolver(2L, EstadoApuesta.PERDIDA);
+
+        assertThat(resultado.getEstado()).isEqualTo(EstadoApuesta.PERDIDA);
+    }
+
+    @Test
+    @DisplayName("resolver() lanza IllegalArgumentException cuando el resultado no es GANADA ni PERDIDA")
+    void resolver_resultadoInvalido_lanzaExcepcion() {
+        assertThatThrownBy(() -> apuestaService.resolver(3L, EstadoApuesta.PAGADA))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El resultado debe ser GANADA o PERDIDA");
+
+        verify(apuestaRepository, never()).findById(3L);
+    }
+
+    @Test
+    @DisplayName("resolver() lanza IllegalArgumentException cuando la apuesta no existe")
+    void resolver_apuestaInexistente_lanzaExcepcion() {
+        when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> apuestaService.resolver(99L, EstadoApuesta.GANADA))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Apuesta no encontrada");
+
+        verify(apuestaRepository, never()).save(any(Apuesta.class));
+    }
+
+    @Test
+    @DisplayName("resolver() lanza IllegalArgumentException cuando la apuesta no está en estado REGISTRADA")
+    void resolver_apuestaNoRegistrada_lanzaExcepcion() {
+        Apuesta apuesta = apuestaConEstado(4L, EstadoApuesta.GANADA, apostadorConSaldo(1L, 10000.0), 5000.0, 2.0);
+
+        when(apuestaRepository.findById(4L)).thenReturn(Optional.of(apuesta));
+
+        assertThatThrownBy(() -> apuestaService.resolver(4L, EstadoApuesta.PERDIDA))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Solo se puede resolver una apuesta en estado REGISTRADA");
+
+        verify(apuestaRepository, never()).save(apuesta);
+    }
+
+    @Test
+    @DisplayName("pagar() acredita monto * cuotaCongelada al apostador y transiciona la apuesta a PAGADA")
+    void pagar_apuestaGanada_acreditaMontoYTransicionaAPagada() {
+        Usuario apostador = apostadorConSaldo(1L, 10000.0);
+        Apuesta apuesta = apuestaConEstado(5L, EstadoApuesta.GANADA, apostador, 5000.0, 2.5);
+
+        when(apuestaRepository.findById(5L)).thenReturn(Optional.of(apuesta));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(apostador));
+        when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+        when(apuestaRepository.save(apuesta)).thenReturn(apuesta);
+
+        Apuesta resultado = apuestaService.pagar(5L);
+
+        assertThat(resultado.getEstado()).isEqualTo(EstadoApuesta.PAGADA);
+        assertThat(apostador.getSaldo()).isEqualTo(22500.0);
+
+        ArgumentCaptor<MovimientoSaldo> captor = ArgumentCaptor.forClass(MovimientoSaldo.class);
+        verify(movimientoSaldoRepository).save(captor.capture());
+        assertThat(captor.getValue().getTipo()).isEqualTo("PAGO_APUESTA");
+        assertThat(captor.getValue().getMonto()).isEqualTo(12500.0);
+        assertThat(captor.getValue().getUsuario()).isEqualTo(apostador);
+    }
+
+    @Test
+    @DisplayName("pagar() lanza IllegalArgumentException cuando la apuesta no existe")
+    void pagar_apuestaInexistente_lanzaExcepcion() {
+        when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> apuestaService.pagar(99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Apuesta no encontrada");
+
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("pagar() lanza IllegalArgumentException cuando la apuesta no está en estado GANADA")
+    void pagar_apuestaNoGanada_lanzaExcepcion() {
+        Apuesta apuesta = apuestaConEstado(6L, EstadoApuesta.REGISTRADA, apostadorConSaldo(1L, 10000.0), 5000.0, 2.0);
+
+        when(apuestaRepository.findById(6L)).thenReturn(Optional.of(apuesta));
+
+        assertThatThrownBy(() -> apuestaService.pagar(6L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Solo se puede pagar una apuesta en estado GANADA");
+
+        verify(apuestaRepository, never()).save(apuesta);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
 }

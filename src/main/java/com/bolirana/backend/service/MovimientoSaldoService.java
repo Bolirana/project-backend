@@ -36,7 +36,7 @@ public class MovimientoSaldoService {
 
     /**
      * Registra un nuevo movimiento de saldo y actualiza el saldo del usuario:
-     * lo suma si el tipo es RECARGA, lo resta si es APUESTA o RETIRO.
+     * lo suma si el tipo es RECARGA o PAGO_APUESTA, lo resta si es APUESTA o RETIRO.
      *
      * @param movimientoSaldo datos del movimiento de saldo a registrar
      * @return el movimiento de saldo creado y persistido
@@ -50,7 +50,7 @@ public class MovimientoSaldoService {
         double saldoActual = usuario.getSaldo() != null ? usuario.getSaldo() : 0.0;
 
         switch (movimientoSaldo.getTipo()) {
-            case "RECARGA" -> usuario.setSaldo(saldoActual + movimientoSaldo.getMonto());
+            case "RECARGA", "PAGO_APUESTA" -> usuario.setSaldo(saldoActual + movimientoSaldo.getMonto());
             case "APUESTA", "RETIRO" -> usuario.setSaldo(saldoActual - movimientoSaldo.getMonto());
             default -> throw new IllegalArgumentException(
                     "Tipo de movimiento no reconocido: " + movimientoSaldo.getTipo());

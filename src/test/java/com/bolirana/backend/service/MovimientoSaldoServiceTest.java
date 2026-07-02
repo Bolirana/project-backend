@@ -134,6 +134,27 @@ class MovimientoSaldoServiceTest {
     }
 
     @Test
+    @DisplayName("crear() con tipo PAGO_APUESTA suma el monto al saldo del usuario")
+    void crear_tipoPagoApuesta_sumaMontoAlSaldo() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setSaldo(10000.0);
+
+        MovimientoSaldo movimiento = new MovimientoSaldo();
+        movimiento.setUsuario(usuario);
+        movimiento.setTipo("PAGO_APUESTA");
+        movimiento.setMonto(6000.0);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(movimientoSaldoRepository.save(movimiento)).thenReturn(movimiento);
+
+        movimientoSaldoService.crear(movimiento);
+
+        assertThat(usuario.getSaldo()).isEqualTo(16000.0);
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
     @DisplayName("crear() con usuario sin saldo previo (null) lo trata como 0.0")
     void crear_saldoPrevioNulo_loTrataComoCero() {
         Usuario usuario = new Usuario();

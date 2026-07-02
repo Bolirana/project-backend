@@ -1,6 +1,8 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.MovimientoSaldo;
+import com.bolirana.backend.dto.RecargaRequest;
+import com.bolirana.backend.dto.RetiroRequest;
 import com.bolirana.backend.service.MovimientoSaldoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,31 @@ public class MovimientoSaldoController {
     @PostMapping
     public ResponseEntity<MovimientoSaldo> crear(@RequestBody MovimientoSaldo movimientoSaldo) {
         MovimientoSaldo creado = movimientoSaldoService.crear(movimientoSaldo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    /**
+     * Recarga saldo a un usuario mediante Nequi, PSE o Tarjeta.
+     *
+     * @param request datos de la recarga (usuarioId, monto, metodoPago)
+     * @return 201 con el movimiento de saldo creado
+     */
+    @PostMapping("/recargar")
+    public ResponseEntity<MovimientoSaldo> recargar(@RequestBody RecargaRequest request) {
+        MovimientoSaldo creado = movimientoSaldoService.recargar(
+                request.usuarioId(), request.monto(), request.metodoPago());
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    /**
+     * Retira saldo de un usuario, validando que tenga saldo suficiente.
+     *
+     * @param request datos del retiro (usuarioId, monto)
+     * @return 201 con el movimiento de saldo creado
+     */
+    @PostMapping("/retirar")
+    public ResponseEntity<MovimientoSaldo> retirar(@RequestBody RetiroRequest request) {
+        MovimientoSaldo creado = movimientoSaldoService.retirar(request.usuarioId(), request.monto());
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 }

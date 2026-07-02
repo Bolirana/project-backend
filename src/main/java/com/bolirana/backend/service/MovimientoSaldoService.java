@@ -14,6 +14,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovimientoSaldoService {
 
+    private static final List<String> METODOS_PAGO_VALIDOS = List.of("NEQUI", "PSE", "TARJETA");
+
     private final MovimientoSaldoRepository movimientoSaldoRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -57,5 +59,58 @@ public class MovimientoSaldoService {
         usuarioRepository.save(usuario);
         movimientoSaldo.setUsuario(usuario);
         return movimientoSaldoRepository.save(movimientoSaldo);
+    }
+
+    /**
+     * Recarga saldo a un usuario mediante uno de los métodos de pago soportados.
+     *
+     * @param usuarioId  identificador del usuario a recargar
+     * @param monto      monto a recargar
+     * @param metodoPago método de pago utilizado (NEQUI, PSE o TARJETA)
+     * @return el movimiento de saldo creado y persistido
+     * @throws IllegalArgumentException si el usuario no existe o el método de pago no es válido
+     */
+    @Transactional
+    public MovimientoSaldo recargar(Long usuarioId, Double monto, String metodoPago) {
+        if (!METODOS_PAGO_VALIDOS.contains(metodoPago)) {
+            throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
+        }
+
+        Usuario usuarioRef = new Usuario();
+        usuarioRef.setId(usuarioId);
+
+        MovimientoSaldo movimiento = new MovimientoSaldo();
+        movimiento.setUsuario(usuarioRef);
+        movimiento.setTipo("RECARGA");
+        movimiento.setMonto(monto);
+        movimiento.setMetodoPago(metodoPago);
+
+        return crear(movimiento);
+    }
+
+    /**
+     * Retira saldo de un usuario, validando que tenga saldo suficiente.
+     *
+     * @param usuarioId identificador del usuario a retirar
+     * @param monto     monto a retirar
+     * @return el movimiento de saldo creado y persistido
+     * @throws IllegalArgumentException si el usuario no existe o no tiene saldo suficiente
+     */
+    @Transactional
+    public MovimientoSaldo retirar(Long usuarioId, Double monto) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        double saldoActual = usuario.getSaldo() != null ? usuario.getSaldo() : 0.0;
+        if (saldoActual < monto) {
+            throw new IllegalArgumentException("Saldo insuficiente para realizar el retiro");
+        }
+
+        MovimientoSaldo movimiento = new MovimientoSaldo();
+        movimiento.setUsuario(usuario);
+        movimiento.setTipo("RETIRO");
+        movimiento.setMonto(monto);
+
+        return crear(movimiento);
     }
 }

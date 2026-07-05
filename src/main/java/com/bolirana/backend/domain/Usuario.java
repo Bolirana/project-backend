@@ -1,7 +1,10 @@
 package com.bolirana.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,17 +34,22 @@ public class Usuario {
     @Column(name = "correo", nullable = false, unique = true)
     private String correo;
 
+    // @JsonIgnore: el hash nunca debe salir en una respuesta HTTP,
+    // ni siquiera hasheado (requisito de no exposicion de credenciales).
+    @JsonIgnore
     @Column(name = "contrasena_hash", nullable = false)
     private String contrasenaHash;
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "rol")
-    private String rol;
+    private RolUsuario rol;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado")
-    private String estado;
+    private EstadoUsuario estado;
 
     @CreationTimestamp
     @Column(name = "creado_en", updatable = false)

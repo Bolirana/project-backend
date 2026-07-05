@@ -14,7 +14,7 @@
     <groupId>com.bolirana</groupId>
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <n>backend</n>
+    <name>backend</name>
     <description>Backend del sistema de apuestas deportivas Bolirana</description>
 
     <properties>

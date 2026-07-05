@@ -14,7 +14,7 @@
     <groupId>com.bolirana</groupId>
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>backend</name>
+    <n>backend</n>
     <description>Backend del sistema de apuestas deportivas Bolirana</description>
 
     <properties>
@@ -42,6 +42,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Provee BCryptPasswordEncoder para el hashing de contrasenas,
+             sin activar el filtro de autenticacion completo de Spring Security. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
         <dependency>

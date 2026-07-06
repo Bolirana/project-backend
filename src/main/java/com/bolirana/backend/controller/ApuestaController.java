@@ -1,11 +1,13 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Apuesta;
+import com.bolirana.backend.dto.ResolverApuestaRequest;
 import com.bolirana.backend.service.ApuestaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -61,5 +63,30 @@ public class ApuestaController {
     public ResponseEntity<Apuesta> crear(@RequestBody Apuesta apuesta) {
         Apuesta creada = apuestaService.crear(apuesta);
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
+    }
+
+    /**
+     * Resuelve una apuesta registrada, transicionándola a GANADA o PERDIDA.
+     *
+     * @param id      identificador de la apuesta a resolver
+     * @param request resultado de la apuesta (GANADA o PERDIDA)
+     * @return 200 con la apuesta actualizada
+     */
+    @PatchMapping("/{id}/resolver")
+    public ResponseEntity<Apuesta> resolver(@PathVariable Long id, @RequestBody ResolverApuestaRequest request) {
+        Apuesta actualizada = apuestaService.resolver(id, request.resultado());
+        return ResponseEntity.ok(actualizada);
+    }
+
+    /**
+     * Paga una apuesta ganada, acreditando al apostador y transicionándola a PAGADA.
+     *
+     * @param id identificador de la apuesta a pagar
+     * @return 200 con la apuesta actualizada
+     */
+    @PatchMapping("/{id}/pagar")
+    public ResponseEntity<Apuesta> pagar(@PathVariable Long id) {
+        Apuesta actualizada = apuestaService.pagar(id);
+        return ResponseEntity.ok(actualizada);
     }
 }

@@ -7,6 +7,7 @@ import com.bolirana.backend.domain.Mercado;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.domain.Usuario;
+import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.repository.ApuestaRepository;
 import com.bolirana.backend.repository.MovimientoSaldoRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +58,7 @@ class ApuestaServiceTest {
                 apuestaRepository, opcionApuestaRepository, usuarioRepository, movimientoSaldoService);
     }
 
-    private static OpcionApuesta opcionConEvento(Long id, Double cuotaActual, String estadoEvento) {
+    private static OpcionApuesta opcionConEvento(Long id, Double cuotaActual, EstadoEvento estadoEvento) {
         Evento evento = new Evento();
         evento.setEstado(estadoEvento);
 
@@ -65,7 +67,7 @@ class ApuestaServiceTest {
 
         OpcionApuesta opcion = new OpcionApuesta();
         opcion.setId(id);
-        opcion.setCuotaActual(cuotaActual);
+        opcion.setCuotaActual(BigDecimal.valueOf(cuotaActual));
         opcion.setMercado(mercado);
         return opcion;
     }
@@ -81,7 +83,7 @@ class ApuestaServiceTest {
     @DisplayName("crear() asigna cuotaCongelada igual a cuotaActual de la opción en el momento de registrar")
     void crear_opcionExistente_congelajCuotaActual() {
         // Caso límite: la cuota puede cambiar después; lo que se guarda debe ser el valor vigente al momento de crear
-        OpcionApuesta opcion = opcionConEvento(1L, 2.5, "ABIERTO");
+        OpcionApuesta opcion = opcionConEvento(1L, 2.5, EstadoEvento.ABIERTO);
         Usuario apostador = apostadorConSaldo(10L, 50000.0);
 
         Apuesta apuesta = new Apuesta();
@@ -102,7 +104,7 @@ class ApuestaServiceTest {
     @DisplayName("crear() inicializa el estado de la apuesta en REGISTRADA")
     void crear_opcionExistente_inicializaEstadoRegistrada() {
         // Caso límite: el estado inicial siempre debe ser REGISTRADA sin importar lo que el cliente envíe
-        OpcionApuesta opcion = opcionConEvento(2L, 1.8, "ABIERTO");
+        OpcionApuesta opcion = opcionConEvento(2L, 1.8, EstadoEvento.ABIERTO);
         Usuario apostador = apostadorConSaldo(11L, 20000.0);
 
         Apuesta apuesta = new Apuesta();
@@ -143,7 +145,7 @@ class ApuestaServiceTest {
     @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando el evento no está ABIERTO")
     void crear_eventoNoAbierto_lanzaExcepcionSinGuardar() {
         // Caso límite: aunque la opción exista, no se debe permitir apostar si el evento ya cerró
-        OpcionApuesta opcion = opcionConEvento(3L, 2.0, "CERRADO");
+        OpcionApuesta opcion = opcionConEvento(3L, 2.0, EstadoEvento.CERRADO);
 
         Apuesta apuesta = new Apuesta();
         apuesta.setOpcion(opcion);
@@ -161,7 +163,7 @@ class ApuestaServiceTest {
     @Test
     @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando el apostador no existe")
     void crear_apostadorInexistente_lanzaExcepcionSinGuardar() {
-        OpcionApuesta opcion = opcionConEvento(4L, 2.0, "ABIERTO");
+        OpcionApuesta opcion = opcionConEvento(4L, 2.0, EstadoEvento.ABIERTO);
         Usuario apostadorInexistente = new Usuario();
         apostadorInexistente.setId(404L);
 
@@ -184,7 +186,7 @@ class ApuestaServiceTest {
     @Test
     @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando el saldo es insuficiente")
     void crear_saldoInsuficiente_lanzaExcepcionSinGuardar() {
-        OpcionApuesta opcion = opcionConEvento(5L, 2.0, "ABIERTO");
+        OpcionApuesta opcion = opcionConEvento(5L, 2.0, EstadoEvento.ABIERTO);
         Usuario apostador = apostadorConSaldo(12L, 3000.0);
 
         Apuesta apuesta = new Apuesta();
@@ -206,7 +208,7 @@ class ApuestaServiceTest {
     @Test
     @DisplayName("crear() con saldo suficiente descuenta el saldo y genera un MovimientoSaldo de tipo APUESTA")
     void crear_saldoSuficiente_descuentaSaldoYGeneraMovimientoTipoApuesta() {
-        OpcionApuesta opcion = opcionConEvento(6L, 1.5, "ABIERTO");
+        OpcionApuesta opcion = opcionConEvento(6L, 1.5, EstadoEvento.ABIERTO);
         Usuario apostador = apostadorConSaldo(13L, 20000.0);
 
         Apuesta apuesta = new Apuesta();

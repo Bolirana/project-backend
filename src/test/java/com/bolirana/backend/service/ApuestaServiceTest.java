@@ -7,6 +7,7 @@ import com.bolirana.backend.domain.Mercado;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.domain.Usuario;
+import com.bolirana.backend.dto.HistorialApostadorResponse;
 import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.exception.TransicionEstadoInvalidaException;
 import com.bolirana.backend.repository.ApuestaRepository;
@@ -23,6 +24,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -450,5 +453,119 @@ class ApuestaServiceTest {
                 .isInstanceOf(TransicionEstadoInvalidaException.class);
 
         verify(eventoRepository, never()).save(any(Evento.class));
+    }
+
+    private static Apuesta apuestaConDetalles(Long id, EstadoApuesta estado, Usuario apostador, Long eventoId,
+            LocalDateTime creadoEn) {
+        Evento evento = new Evento();
+        evento.setId(eventoId);
+
+        Mercado mercado = new Mercado();
+        mercado.setEvento(evento);
+
+        OpcionApuesta opcion = new OpcionApuesta();
+        opcion.setMercado(mercado);
+
+        Apuesta apuesta = new Apuesta();
+        apuesta.setId(id);
+        apuesta.setEstado(estado);
+        apuesta.setApostador(apostador);
+        apuesta.setOpcion(opcion);
+        apuesta.setCreadoEn(creadoEn);
+        return apuesta;
+    }
+
+    @Test
+    @DisplayName("buscarHistorial() sin filtros retorna todas las apuestas")
+    void buscarHistorial_sinFiltros_retornaTodasLasApuestas() {
+        Usuario apostador = apostadorConSaldo(1L, 10000.0);
+        Apuesta apuesta1 = apuestaConDetalles(1L, EstadoApuesta.REGISTRADA, apostador, 10L,
+                LocalDateTime.of(2026, 6, 1, 10, 0));
+        Apuesta apuesta2 = apuestaConDetalles(2L, EstadoApuesta.PAGADA, apostador, 20L,
+                LocalDateTime.of(2026, 6, 15, 10, 0));
+
+        when(apuestaRepository.findAll()).thenReturn(List.of(apuesta1, apuesta2));
+
+        List<Apuesta> resultado = apuestaService.buscarHistorial(null, null, null, null, null);
+
+        assertThat(resultado).containsExactlyInAnyOrder(apuesta1, apuesta2);
+    }
+
+    @Test
+    @DisplayName("buscarHistorial() combina filtros de apostador, evento y estado y solo retorna la coincidencia")
+    void buscarHistorial_combinaFiltrosApostadorEventoYEstado_retornaSoloCoincidencia() {
+        Usuario apostadorUno = apostadorConSaldo(1L, 10000.0);
+        Usuario apostadorDos = apostadorConSaldo(2L, 10000.0);
+
+        Apuesta coincide = apuestaConDetalles(1L, EstadoApuesta.GANADA, apostadorUno, 10L,
+                LocalDateTime.of(2026, 6, 10, 10, 0));
+        Apuesta otroApostador = apuestaConDetalles(2L, EstadoApuesta.GANADA, apostadorDos, 10L,
+                LocalDateTime.of(2026, 6, 10, 10, 0));
+        Apuesta otroEvento = apuestaConDetalles(3L, EstadoApuesta.GANADA, apostadorUno, 20L,
+                LocalDateTime.of(2026, 6, 10, 10, 0));
+        Apuesta otroEstado = apuestaConDetalles(4L, EstadoApuesta.PERDIDA, apostadorUno, 10L,
+                LocalDateTime.of(2026, 6, 10, 10, 0));
+
+        when(apuestaRepository.findAll())
+                .thenReturn(List.of(coincide, otroApostador, otroEvento, otroEstado));
+
+        List<Apuesta> resultado = apuestaService.buscarHistorial(1L, 10L, EstadoApuesta.GANADA, null, null);
+
+        assertThat(resultado).containsExactly(coincide);
+    }
+
+    @Test
+    @DisplayName("buscarHistorial() filtra por rango de fechas de forma inclusiva en ambos límites")
+    void buscarHistorial_filtraPorRangoDeFechas_esInclusivoEnAmbosLimites() {
+        Usuario apostador = apostadorConSaldo(1L, 10000.0);
+        Apuesta antesDelRango = apuestaConDetalles(1L, EstadoApuesta.REGISTRADA, apostador, 10L,
+                LocalDateTime.of(2026, 5, 31, 23, 59));
+        Apuesta enElLimiteInferior = apuestaConDetalles(2L, EstadoApuesta.REGISTRADA, apostador, 10L,
+                LocalDateTime.of(2026, 6, 1, 0, 0));
+        Apuesta enElLimiteSuperior = apuestaConDetalles(3L, EstadoApuesta.REGISTRADA, apostador, 10L,
+                LocalDateTime.of(2026, 6, 10, 23, 59));
+        Apuesta despuesDelRango = apuestaConDetalles(4L, EstadoApuesta.REGISTRADA, apostador, 10L,
+                LocalDateTime.of(2026, 6, 11, 0, 1));
+
+        when(apuestaRepository.findAll())
+                .thenReturn(List.of(antesDelRango, enElLimiteInferior, enElLimiteSuperior, despuesDelRango));
+
+        List<Apuesta> resultado = apuestaService.buscarHistorial(
+                null, null, null, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 10));
+
+        assertThat(resultado).containsExactlyInAnyOrder(enElLimiteInferior, enElLimiteSuperior);
+    }
+
+    @Test
+    @DisplayName("obtenerHistorialApostador() retorna el saldo actual, las apuestas y los movimientos del apostador")
+    void obtenerHistorialApostador_usuarioExistente_retornaSaldoApuestasYMovimientos() {
+        Usuario apostador = apostadorConSaldo(30L, 15000.0);
+        Apuesta apuesta = apuestaConEstado(1L, EstadoApuesta.REGISTRADA, apostador, 5000.0, 2.0);
+        MovimientoSaldo movimiento = new MovimientoSaldo();
+        movimiento.setUsuario(apostador);
+        movimiento.setTipo("RECARGA");
+        movimiento.setMonto(20000.0);
+
+        when(usuarioRepository.findById(30L)).thenReturn(Optional.of(apostador));
+        when(apuestaRepository.findByApostadorId(30L)).thenReturn(List.of(apuesta));
+        when(movimientoSaldoRepository.findByUsuarioId(30L)).thenReturn(List.of(movimiento));
+
+        HistorialApostadorResponse resultado = apuestaService.obtenerHistorialApostador(30L);
+
+        assertThat(resultado.saldo()).isEqualTo(15000.0);
+        assertThat(resultado.apuestas()).containsExactly(apuesta);
+        assertThat(resultado.movimientos()).containsExactly(movimiento);
+    }
+
+    @Test
+    @DisplayName("obtenerHistorialApostador() lanza IllegalArgumentException cuando el usuario no existe")
+    void obtenerHistorialApostador_usuarioInexistente_lanzaExcepcion() {
+        when(usuarioRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> apuestaService.obtenerHistorialApostador(999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Usuario apostador no encontrado");
+
+        verify(apuestaRepository, never()).findByApostadorId(any());
     }
 }

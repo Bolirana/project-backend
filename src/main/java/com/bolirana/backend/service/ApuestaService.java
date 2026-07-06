@@ -5,6 +5,7 @@ import com.bolirana.backend.domain.EstadoApuesta;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.domain.Usuario;
+import com.bolirana.backend.dto.HistorialApostadorResponse;
 import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.repository.ApuestaRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
@@ -13,9 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -184,5 +187,54 @@ public class ApuestaService {
         eventoService.cambiarEstado(eventoId, EstadoEvento.LIQUIDADO);
 
         return apuestasLiquidadas;
+    }
+
+    /**
+     * RF-21: Retorna el historial de apuestas filtrado opcionalmente por apostador,
+     * evento, estado y rango de fechas de creación (ambos límites inclusivos).
+     * Pensado para uso del Administrador.
+     * NOTA: no valida el rol de quien llama porque el proyecto aún no tiene
+     * autenticación por sesión/JWT (mismo pendiente documentado en UsuarioController).
+     *
+     * @param apostadorId filtro opcional por identificador del apostador
+     * @param eventoId    filtro opcional por identificador del evento
+     * @param estado      filtro opcional por estado de la apuesta
+     * @param fechaDesde  filtro opcional: fecha mínima de creación (inclusive)
+     * @param fechaHasta  filtro opcional: fecha máxima de creación (inclusive)
+     * @return las apuestas que cumplen todos los filtros indicados
+     */
+    public List<Apuesta> buscarHistorial(Long apostadorId, Long eventoId, EstadoApuesta estado,
+            LocalDate fechaDesde, LocalDate fechaHasta) {
+        return apuestaRepository.findAll().stream()
+                .filter(a -> apostadorId == null
+                        || (a.getApostador() != null && apostadorId.equals(a.getApostador().getId())))
+                .filter(a -> eventoId == null
+                        || (a.getOpcion() != null && a.getOpcion().getMercado() != null
+                                && a.getOpcion().getMercado().getEvento() != null
+                                && eventoId.equals(a.getOpcion().getMercado().getEvento().getId())))
+                .filter(a -> estado == null || estado == a.getEstado())
+                .filter(a -> fechaDesde == null
+                        || (a.getCreadoEn() != null && !a.getCreadoEn().toLocalDate().isBefore(fechaDesde)))
+                .filter(a -> fechaHasta == null
+                        || (a.getCreadoEn() != null && !a.getCreadoEn().toLocalDate().isAfter(fechaHasta)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * RF-22: Retorna el historial completo de un apostador: sus apuestas, sus
+     * movimientos de saldo y su saldo actual.
+     *
+     * @param apostadorId identificador del usuario apostador
+     * @return el saldo actual, las apuestas y los movimientos de saldo del apostador
+     * @throws IllegalArgumentException si el usuario apostador no existe
+     */
+    public HistorialApostadorResponse obtenerHistorialApostador(Long apostadorId) {
+        Usuario apostador = usuarioRepository.findById(apostadorId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario apostador no encontrado"));
+
+        List<Apuesta> apuestas = listarPorApostador(apostadorId);
+        List<MovimientoSaldo> movimientos = movimientoSaldoService.listarPorUsuario(apostadorId);
+
+        return new HistorialApostadorResponse(apostador.getSaldo(), apuestas, movimientos);
     }
 }

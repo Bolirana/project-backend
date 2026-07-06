@@ -1,16 +1,13 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Evento;
+import com.bolirana.backend.dto.EventoCreacionDTO;
+import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.service.EventoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,31 +21,43 @@ public class EventoController {
     /** Retorna la lista de todos los eventos registrados en el sistema. */
     @GetMapping
     public List<Evento> listar() {
-        return eventoService.listar();
+        return eventoService.listarEventos();
     }
 
     /**
      * Busca un evento por su identificador.
-     *
-     * @param id identificador del evento
-     * @return 200 con el evento si existe, 404 si no se encuentra
+     * Modificado: Como el servicio unificado lanza excepción si no se encuentra, 
+     * el método retorna directamente 200 OK con el objeto.
      */
     @GetMapping("/{id}")
     public ResponseEntity<Evento> buscarPorId(@PathVariable Long id) {
-        return eventoService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Evento evento = eventoService.obtenerEventoPorId(id);
+        return ResponseEntity.ok(evento);
     }
 
     /**
-     * Crea un nuevo evento.
-     *
-     * @param evento datos del evento a crear
-     * @return 201 con el evento creado
+     * Retorna los eventos filtrados por un estado específico.
+     */
+    @GetMapping("/estado/{estado}")
+    public List<Evento> listarPorEstado(@PathVariable EstadoEvento estado) {
+        return eventoService.listarPorEstado(estado);
+    }
+
+    /**
+     * Crea un nuevo evento con sus mercados y opciones de apuesta.
      */
     @PostMapping
-    public ResponseEntity<Evento> crear(@RequestBody Evento evento) {
-        Evento creado = eventoService.crear(evento);
+    public ResponseEntity<Evento> crear(@RequestBody EventoCreacionDTO dto) {
+        Evento creado = eventoService.crearEvento(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    /**
+     * RF-05 / RF-16: Cambia el estado de un evento validando las transiciones permitidas.
+     */
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Evento> cambiarEstado(@PathVariable Long id, @RequestParam EstadoEvento nuevoEstado) {
+        Evento actualizado = eventoService.cambiarEstado(id, nuevoEstado);
+        return ResponseEntity.ok(actualizado);
     }
 }

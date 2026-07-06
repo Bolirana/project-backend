@@ -1,16 +1,10 @@
 package com.bolirana.backend.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "opcion_apuesta")
@@ -31,5 +25,43 @@ public class OpcionApuesta {
     private String nombre;
 
     @Column(name = "cuota_actual")
-    private Double cuotaActual;
+    private BigDecimal cuotaActual;
+
+
+    public OpcionApuesta(String nombre, BigDecimal cuotaActual) {
+        this.nombre = nombre;
+        this.cuotaActual = cuotaActual;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public BigDecimal getCuotaActual() {
+        return cuotaActual;
+    }
+
+    public void setCuotaActual(BigDecimal cuotaActual) {
+        this.cuotaActual = cuotaActual;
+    }
+
+    public Mercado getMercado() {
+        return mercado;
+    }
+
+    public void setMercado(Mercado mercado) {
+        this.mercado = mercado;
+    }
 }

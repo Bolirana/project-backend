@@ -1,6 +1,6 @@
 package com.bolirana.backend.client;
 
-import com.example.eventos.client.dto.OddsApiEventoDTO;
+import com.bolirana.backend.client.dto.OddsApiEventoDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;

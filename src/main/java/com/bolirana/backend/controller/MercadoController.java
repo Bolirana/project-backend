@@ -1,11 +1,11 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Mercado;
-import com.bolirana.backend.domain.HistorialCambioCuota;
+import com.bolirana.backend.domain.HistorialCuota;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.service.MercadoService;
 import com.bolirana.backend.dto.CambioCuotaDTO;
-import com.bolirana.backend.dto.HistorialCambioCuotaDTO;
+import com.bolirana.backend.dto.HistorialCuotaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,15 +32,16 @@ public class MercadoController {
 
     /**
      * Busca un mercado por su identificador.
+     * Como el servicio unificado lanza excepción si no se encuentra,
+     * el método retorna directamente 200 OK con el objeto.
      *
      * @param id identificador del mercado
-     * @return 200 con el mercado si existe, 404 si no se encuentra
+     * @return 200 con el mercado
      */
     @GetMapping("/{id}")
     public ResponseEntity<Mercado> buscarPorId(@PathVariable Long id) {
-        return mercadoService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Mercado mercado = mercadoService.buscarPorId(id);
+        return ResponseEntity.ok(mercado);
     }
 
     /**
@@ -69,7 +71,7 @@ public class MercadoController {
      * RF-23: Permite consultar la auditoría/historial de cambios de cuotas de una opción.
      */
     @GetMapping("/opciones/{opcionApuestaId}/historial-cuotas")
-    public List<HistorialCambioCuota> obtenerHistorialCuotas(@PathVariable Long opcionApuestaId) {
+    public List<HistorialCuota> obtenerHistorialCuotas(@PathVariable Long opcionApuestaId) {
         return mercadoService.obtenerHistorialCuotas(opcionApuestaId);
     }
 }

@@ -1,6 +1,7 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Evento;
+import com.bolirana.backend.dto.EventoCreacionDTO;
 import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.service.EventoService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class EventoController {
     /** Retorna la lista de todos los eventos registrados en el sistema. */
     @GetMapping
     public List<Evento> listar() {
-        return eventoService.listar();
+        return eventoService.listarEventos();
     }
 
     /**
@@ -30,7 +31,7 @@ public class EventoController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Evento> buscarPorId(@PathVariable Long id) {
-        Evento evento = eventoService.buscarPorId(id);
+        Evento evento = eventoService.obtenerEventoPorId(id);
         return ResponseEntity.ok(evento);
     }
 
@@ -43,11 +44,11 @@ public class EventoController {
     }
 
     /**
-     * Crea un nuevo evento.
+     * Crea un nuevo evento con sus mercados y opciones de apuesta.
      */
     @PostMapping
-    public ResponseEntity<Evento> crear(@RequestBody Evento evento) {
-        Evento creado = eventoService.crear(evento);
+    public ResponseEntity<Evento> crear(@RequestBody EventoCreacionDTO dto) {
+        Evento creado = eventoService.crearEvento(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 

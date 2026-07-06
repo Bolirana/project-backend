@@ -55,7 +55,7 @@ public class ApuestaService {
                 .orElseThrow(() -> new IllegalArgumentException("Opcion de apuesta no encontrada"));
 
         apuesta.setOpcion(opcion);
-        apuesta.setCuotaCongelada(opcion.getCuotaActual());
+        apuesta.setCuotaCongelada(opcion.getCuotaActual().doubleValue());
         apuesta.setEstado("PENDIENTE");
 
         return apuestaRepository.save(apuesta);

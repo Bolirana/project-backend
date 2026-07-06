@@ -1,8 +1,8 @@
-package com.example.eventos.builder;
+package com.bolirana.backend.builder;
 
-import com.example.eventos.model.Evento;
-import com.example.eventos.model.Mercado;
-import com.example.eventos.model.OpcionApuesta;
+import com.bolirana.backend.domain.Evento;
+import com.bolirana.backend.domain.Mercado;
+import com.bolirana.backend.domain.OpcionApuesta;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

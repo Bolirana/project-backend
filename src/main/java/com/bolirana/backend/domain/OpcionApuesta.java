@@ -25,7 +25,7 @@ public class OpcionApuesta {
     private String nombre;
 
     @Column(name = "cuota_actual")
-    private Double cuotaActual;
+    private BigDecimal cuotaActual;
 
 
     public OpcionApuesta(String nombre, BigDecimal cuotaActual) {

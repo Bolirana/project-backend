@@ -1,9 +1,9 @@
 package com.bolirana.backend.dto;
 
 import com.bolirana.backend.enums.EstadoEvento;
-import com.bolirana.backend.model.Evento;
-import com.bolirana.backend.model.Mercado;
-import com.bolirana.backend.model.OpcionApuesta;
+import com.bolirana.backend.domain.Evento;
+import com.bolirana.backend.domain.Mercado;
+import com.bolirana.backend.domain.OpcionApuesta;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

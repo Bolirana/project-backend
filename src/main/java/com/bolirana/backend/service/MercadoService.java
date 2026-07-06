@@ -1,13 +1,13 @@
 package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Evento;
-import com.bolirana.backend.domain.HistorialCambioCuota;
+import com.bolirana.backend.domain.HistorialCuota;
 import com.bolirana.backend.domain.Mercado;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.enums.EstadoEvento;
 import com.bolirana.backend.exception.RecursoNoEncontradoException;
 import com.bolirana.backend.exception.ValidacionNegocioException;
-import com.bolirana.backend.repository.HistorialCambioCuotaRepository;
+import com.bolirana.backend.repository.HistorialCuotaRepository;
 import com.bolirana.backend.repository.MercadoRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class MercadoService {
 
     private final MercadoRepository mercadoRepository;
     private final OpcionApuestaRepository opcionApuestaRepository;
-    private final HistorialCambioCuotaRepository historialRepository;
+    private final HistorialCuotaRepository historialRepository;
 
     // --- OPERACIONES DE MERCADO (De MercadoService1) ---
 
@@ -83,8 +83,8 @@ public class MercadoService {
         BigDecimal cuotaAnterior = opcion.getCuotaActual();
 
         // RF-23: registrar el cambio con cuota anterior y nueva, origen MANUAL
-        HistorialCambioCuota historial = new HistorialCambioCuota(
-                opcion, cuotaAnterior, nuevaCuota, HistorialCambioCuota.ORIGEN_MANUAL);
+        HistorialCuota historial = new HistorialCuota(
+                opcion, cuotaAnterior, nuevaCuota, HistorialCuota.ORIGEN_MANUAL);
         historialRepository.save(historial);
 
         opcion.setCuotaActual(nuevaCuota);
@@ -96,7 +96,7 @@ public class MercadoService {
      * RF-23: Consulta el historial de cambios de cuota de una opción de apuesta.
      */
     @Transactional(readOnly = true)
-    public List<HistorialCambioCuota> obtenerHistorialCuotas(Long opcionApuestaId) {
+    public List<HistorialCuota> obtenerHistorialCuotas(Long opcionApuestaId) {
         if (!opcionApuestaRepository.existsById(opcionApuestaId)) {
             throw new RecursoNoEncontradoException(
                     "No se encontró la opción de apuesta con id " + opcionApuestaId);

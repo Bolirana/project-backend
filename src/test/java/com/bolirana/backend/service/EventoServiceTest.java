@@ -1,6 +1,8 @@
 package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Evento;
+import com.bolirana.backend.enums.EstadoEvento;
+import com.bolirana.backend.exception.RecursoNoEncontradoException;
 import com.bolirana.backend.repository.EventoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,28 +36,27 @@ class EventoServiceTest {
         evento.setId(id);
         evento.setNombre("Final Copa America");
         evento.setDeporte("Futbol");
-        evento.setEstado("ABIERTO");
+        evento.setEstado(EstadoEvento.ABIERTO);
 
         when(eventoRepository.findById(id)).thenReturn(Optional.of(evento));
 
-        Optional<Evento> resultado = eventoService.buscarPorId(id);
+        Evento resultado = eventoService.obtenerEventoPorId(id);
 
-        assertThat(resultado).isPresent();
-        assertThat(resultado.get()).isEqualTo(evento);
+        assertThat(resultado).isEqualTo(evento);
         verify(eventoRepository).findById(id);
     }
 
     @Test
-    @DisplayName("buscarPorId retorna Optional vacío cuando el evento no existe")
-    void buscarPorId_eventoInexistente_retornaOptionalVacio() {
+    @DisplayName("buscarPorId lanza RecursoNoEncontradoException cuando el evento no existe")
+    void buscarPorId_eventoInexistente_lanzaExcepcion() {
         // Caso límite: el id no corresponde a ningún evento, por lo que el controller debe responder 404
         Long id = 999L;
 
         when(eventoRepository.findById(id)).thenReturn(Optional.empty());
 
-        Optional<Evento> resultado = eventoService.buscarPorId(id);
+        assertThatThrownBy(() -> eventoService.obtenerEventoPorId(id))
+                .isInstanceOf(RecursoNoEncontradoException.class);
 
-        assertThat(resultado).isEmpty();
         verify(eventoRepository).findById(id);
     }
 }

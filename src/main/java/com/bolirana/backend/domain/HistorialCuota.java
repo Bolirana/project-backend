@@ -14,7 +14,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Entity
 @AllArgsConstructor
 @Table(name = "historial_cuota")
-public class HistorialCambioCuota {
+public class HistorialCuota {
 
     public static final String ORIGEN_MANUAL = "MANUAL";
     public static final String ORIGEN_SUGERENCIA_MOTOR_RIESGO = "SUGERENCIA_MOTOR_RIESGO";
@@ -40,11 +40,11 @@ public class HistorialCambioCuota {
     @Column(name = "cambiado_en")
     private LocalDateTime cambiadoEn;
 
-    public HistorialCambioCuota() {
+    public HistorialCuota() {
         this.cambiadoEn = LocalDateTime.now();
     }
 
-    public HistorialCambioCuota(OpcionApuesta opcionApuesta, BigDecimal cuotaAnterior, BigDecimal cuotaNueva, String origen) {
+    public HistorialCuota(OpcionApuesta opcionApuesta, BigDecimal cuotaAnterior, BigDecimal cuotaNueva, String origen) {
         this.opcionApuesta = opcionApuesta;
         this.cuotaAnterior = cuotaAnterior;
         this.cuotaNueva = cuotaNueva;

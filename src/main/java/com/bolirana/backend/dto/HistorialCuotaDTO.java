@@ -1,12 +1,12 @@
 package com.bolirana.backend.dto;
 
-import com.bolirana.backend.model.HistorialCuota;
+import com.bolirana.backend.domain.HistorialCuota;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /** RF-23: DTO de salida para consultar el historial de cambios de cuota. */
-public class HistorialCambioCuotaDTO {
+public class HistorialCuotaDTO {
 
     private Long id;
     private Long opcionApuestaId;
@@ -16,8 +16,8 @@ public class HistorialCambioCuotaDTO {
     private String origen;
     private LocalDateTime cambiadoEn;
 
-    public static HistorialCambioCuotaDTO desdeEntidad(HistorialCambioCuota historial) {
-        HistorialCambioCuotaDTO dto = new HistorialCambioCuotaDTO();
+    public static HistorialCuotaDTO desdeEntidad(HistorialCuota historial) {
+        HistorialCuotaDTO dto = new HistorialCuotaDTO();
         dto.id = historial.getId();
         dto.opcionApuestaId = historial.getOpcionApuesta().getId();
         dto.nombreOpcion = historial.getOpcionApuesta().getNombre();

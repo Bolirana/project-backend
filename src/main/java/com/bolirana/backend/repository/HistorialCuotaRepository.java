@@ -14,4 +14,13 @@ public interface HistorialCuotaRepository extends JpaRepository<HistorialCuota, 
      * @return lista del historial de cuotas asociado a la opción
      */
     List<HistorialCuota> findByOpcionId(Long opcionId);
+
+    /**
+     * Busca el historial de cambios de cuota de una opción de apuesta,
+     * ordenado del más reciente al más antiguo.
+     *
+     * @param opcionApuestaId identificador de la opción de apuesta
+     * @return historial de cuotas de la opción, ordenado por fecha descendente
+     */
+    List<HistorialCuota> findByOpcionApuestaIdOrderByCambiadoEnDesc(Long opcionApuestaId);
 }

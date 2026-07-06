@@ -8,7 +8,9 @@ import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.domain.Usuario;
 import com.bolirana.backend.enums.EstadoEvento;
+import com.bolirana.backend.exception.TransicionEstadoInvalidaException;
 import com.bolirana.backend.repository.ApuestaRepository;
+import com.bolirana.backend.repository.EventoRepository;
 import com.bolirana.backend.repository.MovimientoSaldoRepository;
 import com.bolirana.backend.repository.OpcionApuestaRepository;
 import com.bolirana.backend.repository.UsuarioRepository;
@@ -47,17 +49,22 @@ class ApuestaServiceTest {
     @Mock
     private MovimientoSaldoRepository movimientoSaldoRepository;
 
-    // Instancia real: MovimientoSaldoService no es una interfaz y en este entorno (JDK 26)
-    // Mockito no puede instrumentar clases concretas, así que se colabora con la clase real
-    // apoyada en sus propios repositorios mockeados en lugar de mockear el servicio.
+    @Mock
+    private EventoRepository eventoRepository;
+
+    // Instancia real: MovimientoSaldoService y EventoService no son interfaces y en este
+    // entorno (JDK 26) Mockito no puede instrumentar clases concretas, así que se colabora
+    // con las clases reales apoyadas en sus propios repositorios mockeados en lugar de
+    // mockear los servicios.
     private ApuestaService apuestaService;
 
     @BeforeEach
     void setUp() {
         MovimientoSaldoService movimientoSaldoService =
                 new MovimientoSaldoService(movimientoSaldoRepository, usuarioRepository);
+        EventoService eventoService = new EventoService(eventoRepository);
         apuestaService = new ApuestaService(
-                apuestaRepository, opcionApuestaRepository, usuarioRepository, movimientoSaldoService);
+                apuestaRepository, opcionApuestaRepository, usuarioRepository, movimientoSaldoService, eventoService);
     }
 
     private static OpcionApuesta opcionConEvento(Long id, Double cuotaActual, EstadoEvento estadoEvento) {
@@ -235,6 +242,13 @@ class ApuestaServiceTest {
         assertThat(captor.getValue().getUsuario()).isEqualTo(apostador);
     }
 
+    private static Evento eventoConEstado(Long id, EstadoEvento estado) {
+        Evento evento = new Evento();
+        evento.setId(id);
+        evento.setEstado(estado);
+        return evento;
+    }
+
     private static Apuesta apuestaConEstado(Long id, EstadoApuesta estado, Usuario apostador, Double monto,
             Double cuotaCongelada) {
         Apuesta apuesta = new Apuesta();
@@ -360,8 +374,9 @@ class ApuestaServiceTest {
     }
 
     @Test
-    @DisplayName("liquidarEvento() resuelve GANADA/PERDIDA según la opción ganadora y paga automáticamente la ganadora")
-    void liquidarEvento_conApuestasRegistradas_resuelveYPagaGanadoras() {
+    @DisplayName("liquidarEvento() resuelve GANADA/PERDIDA según la opción ganadora, paga la ganadora "
+            + "y transiciona el evento a LIQUIDADO")
+    void liquidarEvento_conApuestasRegistradas_resuelveYPagaGanadorasYLiquidaEvento() {
         Usuario apostadorGanador = apostadorConSaldo(20L, 10000.0);
         Usuario apostadorPerdedor = apostadorConSaldo(21L, 10000.0);
 
@@ -377,6 +392,8 @@ class ApuestaServiceTest {
         Apuesta apuestaPerdedora = apuestaConEstado(2L, EstadoApuesta.REGISTRADA, apostadorPerdedor, 3000.0, 1.5);
         apuestaPerdedora.setOpcion(opcionPerdedora);
 
+        Evento evento = eventoConEstado(50L, EstadoEvento.CERRADO);
+
         when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(50L, EstadoApuesta.REGISTRADA))
                 .thenReturn(List.of(apuestaGanadora, apuestaPerdedora));
         when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuestaGanadora));
@@ -385,6 +402,8 @@ class ApuestaServiceTest {
         when(usuarioRepository.findById(20L)).thenReturn(Optional.of(apostadorGanador));
         when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
+        when(eventoRepository.findById(50L)).thenReturn(Optional.of(evento));
+        when(eventoRepository.save(any(Evento.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
 
         List<Apuesta> resultado = apuestaService.liquidarEvento(50L, 100L);
 
@@ -392,21 +411,44 @@ class ApuestaServiceTest {
         assertThat(apuestaGanadora.getEstado()).isEqualTo(EstadoApuesta.PAGADA);
         assertThat(apuestaPerdedora.getEstado()).isEqualTo(EstadoApuesta.PERDIDA);
         assertThat(apostadorGanador.getSaldo()).isEqualTo(20000.0);
+        assertThat(evento.getEstado()).isEqualTo(EstadoEvento.LIQUIDADO);
 
         verify(usuarioRepository, never()).findById(21L);
         verify(movimientoSaldoRepository, times(1)).save(any(MovimientoSaldo.class));
+        verify(eventoRepository).save(evento);
     }
 
     @Test
-    @DisplayName("liquidarEvento() retorna lista vacía cuando el evento no tiene apuestas REGISTRADA")
-    void liquidarEvento_sinApuestasRegistradas_retornaListaVacia() {
+    @DisplayName("liquidarEvento() retorna lista vacía y transiciona el evento a LIQUIDADO "
+            + "cuando no tiene apuestas REGISTRADA")
+    void liquidarEvento_sinApuestasRegistradas_retornaListaVaciaYLiquidaEvento() {
+        Evento evento = eventoConEstado(60L, EstadoEvento.CERRADO);
+
         when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(60L, EstadoApuesta.REGISTRADA))
                 .thenReturn(List.of());
+        when(eventoRepository.findById(60L)).thenReturn(Optional.of(evento));
+        when(eventoRepository.save(any(Evento.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
 
         List<Apuesta> resultado = apuestaService.liquidarEvento(60L, 999L);
 
         assertThat(resultado).isEmpty();
+        assertThat(evento.getEstado()).isEqualTo(EstadoEvento.LIQUIDADO);
         verify(apuestaRepository, never()).save(any(Apuesta.class));
         verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("liquidarEvento() propaga la excepción cuando el evento no puede transicionar a LIQUIDADO")
+    void liquidarEvento_eventoNoPuedeLiquidarse_propagaExcepcion() {
+        Evento evento = eventoConEstado(70L, EstadoEvento.ABIERTO);
+
+        when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(70L, EstadoApuesta.REGISTRADA))
+                .thenReturn(List.of());
+        when(eventoRepository.findById(70L)).thenReturn(Optional.of(evento));
+
+        assertThatThrownBy(() -> apuestaService.liquidarEvento(70L, 999L))
+                .isInstanceOf(TransicionEstadoInvalidaException.class);
+
+        verify(eventoRepository, never()).save(any(Evento.class));
     }
 }

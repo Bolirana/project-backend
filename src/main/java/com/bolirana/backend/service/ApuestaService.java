@@ -25,6 +25,7 @@ public class ApuestaService {
     private final OpcionApuestaRepository opcionApuestaRepository;
     private final UsuarioRepository usuarioRepository;
     private final MovimientoSaldoService movimientoSaldoService;
+    private final EventoService eventoService;
 
     /** Retorna la lista de todas las apuestas registradas en el sistema. */
     public List<Apuesta> listar() {
@@ -154,11 +155,14 @@ public class ApuestaService {
     /**
      * RF-15: Liquida un evento resolviendo todas sus apuestas REGISTRADA:
      * las que apostaron a la opción ganadora quedan GANADA y se pagan
-     * automáticamente; el resto queda PERDIDA.
+     * automáticamente; el resto queda PERDIDA. Al final transiciona el
+     * evento a LIQUIDADO.
      *
      * @param eventoId         identificador del evento a liquidar
      * @param opcionGanadoraId identificador de la opción de apuesta ganadora
      * @return las apuestas del evento tras la liquidación
+     * @throws com.bolirana.backend.exception.TransicionEstadoInvalidaException si el evento
+     *         no puede transicionar a LIQUIDADO desde su estado actual
      */
     @Transactional
     public List<Apuesta> liquidarEvento(Long eventoId, Long opcionGanadoraId) {
@@ -176,6 +180,8 @@ public class ApuestaService {
 
             apuestasLiquidadas.add(resuelta);
         }
+
+        eventoService.cambiarEstado(eventoId, EstadoEvento.LIQUIDADO);
 
         return apuestasLiquidadas;
     }

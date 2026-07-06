@@ -21,12 +21,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -354,6 +356,57 @@ class ApuestaServiceTest {
                 .hasMessage("Solo se puede pagar una apuesta en estado GANADA");
 
         verify(apuestaRepository, never()).save(apuesta);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("liquidarEvento() resuelve GANADA/PERDIDA según la opción ganadora y paga automáticamente la ganadora")
+    void liquidarEvento_conApuestasRegistradas_resuelveYPagaGanadoras() {
+        Usuario apostadorGanador = apostadorConSaldo(20L, 10000.0);
+        Usuario apostadorPerdedor = apostadorConSaldo(21L, 10000.0);
+
+        OpcionApuesta opcionGanadora = new OpcionApuesta();
+        opcionGanadora.setId(100L);
+
+        OpcionApuesta opcionPerdedora = new OpcionApuesta();
+        opcionPerdedora.setId(200L);
+
+        Apuesta apuestaGanadora = apuestaConEstado(1L, EstadoApuesta.REGISTRADA, apostadorGanador, 5000.0, 2.0);
+        apuestaGanadora.setOpcion(opcionGanadora);
+
+        Apuesta apuestaPerdedora = apuestaConEstado(2L, EstadoApuesta.REGISTRADA, apostadorPerdedor, 3000.0, 1.5);
+        apuestaPerdedora.setOpcion(opcionPerdedora);
+
+        when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(50L, EstadoApuesta.REGISTRADA))
+                .thenReturn(List.of(apuestaGanadora, apuestaPerdedora));
+        when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuestaGanadora));
+        when(apuestaRepository.findById(2L)).thenReturn(Optional.of(apuestaPerdedora));
+        when(apuestaRepository.save(any(Apuesta.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+        when(usuarioRepository.findById(20L)).thenReturn(Optional.of(apostadorGanador));
+        when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        List<Apuesta> resultado = apuestaService.liquidarEvento(50L, 100L);
+
+        assertThat(resultado).hasSize(2);
+        assertThat(apuestaGanadora.getEstado()).isEqualTo(EstadoApuesta.PAGADA);
+        assertThat(apuestaPerdedora.getEstado()).isEqualTo(EstadoApuesta.PERDIDA);
+        assertThat(apostadorGanador.getSaldo()).isEqualTo(20000.0);
+
+        verify(usuarioRepository, never()).findById(21L);
+        verify(movimientoSaldoRepository, times(1)).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("liquidarEvento() retorna lista vacía cuando el evento no tiene apuestas REGISTRADA")
+    void liquidarEvento_sinApuestasRegistradas_retornaListaVacia() {
+        when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(60L, EstadoApuesta.REGISTRADA))
+                .thenReturn(List.of());
+
+        List<Apuesta> resultado = apuestaService.liquidarEvento(60L, 999L);
+
+        assertThat(resultado).isEmpty();
+        verify(apuestaRepository, never()).save(any(Apuesta.class));
         verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
     }
 }

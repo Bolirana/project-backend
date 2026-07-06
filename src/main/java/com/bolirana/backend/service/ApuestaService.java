@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -148,5 +149,34 @@ public class ApuestaService {
 
         apuesta.setEstado(EstadoApuesta.PAGADA);
         return apuestaRepository.save(apuesta);
+    }
+
+    /**
+     * RF-15: Liquida un evento resolviendo todas sus apuestas REGISTRADA:
+     * las que apostaron a la opción ganadora quedan GANADA y se pagan
+     * automáticamente; el resto queda PERDIDA.
+     *
+     * @param eventoId         identificador del evento a liquidar
+     * @param opcionGanadoraId identificador de la opción de apuesta ganadora
+     * @return las apuestas del evento tras la liquidación
+     */
+    @Transactional
+    public List<Apuesta> liquidarEvento(Long eventoId, Long opcionGanadoraId) {
+        List<Apuesta> apuestasRegistradas =
+                apuestaRepository.findByOpcionMercadoEventoIdAndEstado(eventoId, EstadoApuesta.REGISTRADA);
+
+        List<Apuesta> apuestasLiquidadas = new ArrayList<>();
+        for (Apuesta apuesta : apuestasRegistradas) {
+            boolean gano = apuesta.getOpcion().getId().equals(opcionGanadoraId);
+            Apuesta resuelta = resolver(apuesta.getId(), gano ? EstadoApuesta.GANADA : EstadoApuesta.PERDIDA);
+
+            if (resuelta.getEstado() == EstadoApuesta.GANADA) {
+                resuelta = pagar(resuelta.getId());
+            }
+
+            apuestasLiquidadas.add(resuelta);
+        }
+
+        return apuestasLiquidadas;
     }
 }

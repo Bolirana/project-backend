@@ -1,6 +1,7 @@
 package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Apuesta;
+import com.bolirana.backend.dto.LiquidarEventoRequest;
 import com.bolirana.backend.dto.ResolverApuestaRequest;
 import com.bolirana.backend.service.ApuestaService;
 import lombok.RequiredArgsConstructor;
@@ -88,5 +89,19 @@ public class ApuestaController {
     public ResponseEntity<Apuesta> pagar(@PathVariable Long id) {
         Apuesta actualizada = apuestaService.pagar(id);
         return ResponseEntity.ok(actualizada);
+    }
+
+    /**
+     * RF-15: Liquida un evento resolviendo y pagando todas sus apuestas REGISTRADA
+     * según la opción ganadora.
+     *
+     * @param request identificador del evento y de la opción ganadora
+     * @return 200 con las apuestas del evento tras la liquidación
+     */
+    @PostMapping("/liquidar")
+    public ResponseEntity<List<Apuesta>> liquidar(@RequestBody LiquidarEventoRequest request) {
+        List<Apuesta> apuestasLiquidadas =
+                apuestaService.liquidarEvento(request.eventoId(), request.opcionGanadoraId());
+        return ResponseEntity.ok(apuestasLiquidadas);
     }
 }

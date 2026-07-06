@@ -10,6 +10,7 @@ CREATE TABLE usuario (
     fecha_nacimiento DATE,
     rol VARCHAR,
     estado VARCHAR,
+    saldo FLOAT DEFAULT 0.0,
     creado_en TIMESTAMP DEFAULT NOW()
 );
 
@@ -18,6 +19,8 @@ CREATE TABLE evento (
     nombre VARCHAR,
     deporte VARCHAR,
     fecha_evento DATE,
+    equipo_local VARCHAR,
+    equipo_visitante VARCHAR,
     estado VARCHAR,
     creado_en TIMESTAMP DEFAULT NOW()
 );
@@ -33,7 +36,7 @@ CREATE TABLE opcion_apuesta (
     id SERIAL PRIMARY KEY,
     mercado_id INTEGER NOT NULL REFERENCES mercado(id),
     nombre VARCHAR,
-    cuota_actual FLOAT
+    cuota_actual NUMERIC(10,2)
 );
 
 CREATE TABLE apuesta (

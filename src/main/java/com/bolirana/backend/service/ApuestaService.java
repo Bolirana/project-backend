@@ -80,7 +80,7 @@ public class ApuestaService {
 
         apuesta.setApostador(apostador);
         apuesta.setOpcion(opcion);
-        apuesta.setCuotaCongelada(opcion.getCuotaActual());
+        apuesta.setCuotaCongelada(opcion.getCuotaActual().doubleValue());
         apuesta.setEstado(EstadoApuesta.REGISTRADA);
 
         Apuesta apuestaGuardada = apuestaRepository.save(apuesta);

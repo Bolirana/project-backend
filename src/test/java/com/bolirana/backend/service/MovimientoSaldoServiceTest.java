@@ -313,6 +313,16 @@ class MovimientoSaldoServiceTest {
     }
 
     @Test
+    @DisplayName("retirar() con metodoPago TARJETA lanza IllegalArgumentException porque TARJETA no está disponible para retiros")
+    void retirar_metodoPagoTarjeta_lanzaExcepcionSinTocarRepositorios() {
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0, "TARJETA"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Método de pago no válido: TARJETA");
+
+        verifyNoInteractions(usuarioRepository, movimientoSaldoRepository);
+    }
+
+    @Test
     @DisplayName("retirar() con saldo insuficiente lanza IllegalArgumentException sin guardar")
     void retirar_saldoInsuficiente_lanzaExcepcionSinGuardar() {
         Usuario usuario = new Usuario();

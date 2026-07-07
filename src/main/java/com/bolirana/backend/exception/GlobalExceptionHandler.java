@@ -65,6 +65,18 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /**
+     * Maneja errores de validación de negocio lanzados como IllegalArgumentException
+     * (ApuestaService, MovimientoSaldoService, UsuarioService, etc.).
+     *
+     * @param ex excepcion capturada
+     * @return 400 Bad Request con un mensaje descriptivo
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidacion(MethodArgumentNotValidException ex) {
         StringBuilder sb = new StringBuilder("Errores de validación: ");

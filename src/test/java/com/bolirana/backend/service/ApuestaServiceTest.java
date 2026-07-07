@@ -2,6 +2,7 @@ package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Apuesta;
 import com.bolirana.backend.domain.EstadoApuesta;
+import com.bolirana.backend.domain.EstadoUsuario;
 import com.bolirana.backend.domain.Evento;
 import com.bolirana.backend.domain.Mercado;
 import com.bolirana.backend.domain.MovimientoSaldo;
@@ -88,6 +89,7 @@ class ApuestaServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(id);
         usuario.setSaldo(saldo);
+        usuario.setEstado(EstadoUsuario.ACTIVO);
         return usuario;
     }
 
@@ -190,6 +192,29 @@ class ApuestaServiceTest {
         assertThatThrownBy(() -> apuestaService.crear(apuesta))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Usuario apostador no encontrado");
+
+        verify(apuestaRepository, never()).save(apuesta);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando el apostador no está ACTIVO")
+    void crear_apostadorNoActivo_lanzaExcepcionSinGuardar() {
+        OpcionApuesta opcion = opcionConEvento(15L, 2.0, EstadoEvento.ABIERTO);
+        Usuario apostadorSuspendido = apostadorConSaldo(16L, 50000.0);
+        apostadorSuspendido.setEstado(EstadoUsuario.SUSPENDIDO);
+
+        Apuesta apuesta = new Apuesta();
+        apuesta.setOpcion(opcion);
+        apuesta.setApostador(apostadorSuspendido);
+        apuesta.setMonto(10000.0);
+
+        when(opcionApuestaRepository.findById(15L)).thenReturn(Optional.of(opcion));
+        when(usuarioRepository.findById(16L)).thenReturn(Optional.of(apostadorSuspendido));
+
+        assertThatThrownBy(() -> apuestaService.crear(apuesta))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El usuario no puede realizar apuestas: cuenta suspendida o eliminada");
 
         verify(apuestaRepository, never()).save(apuesta);
         verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));

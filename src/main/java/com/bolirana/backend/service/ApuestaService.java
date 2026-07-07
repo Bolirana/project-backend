@@ -2,6 +2,7 @@ package com.bolirana.backend.service;
 
 import com.bolirana.backend.domain.Apuesta;
 import com.bolirana.backend.domain.EstadoApuesta;
+import com.bolirana.backend.domain.EstadoUsuario;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.domain.Usuario;
@@ -63,8 +64,8 @@ public class ApuestaService {
      * @param apuesta datos de la apuesta a registrar
      * @return la apuesta creada y persistida
      * @throws IllegalArgumentException si la opción de apuesta no existe, si el evento
-     *         asociado no está en estado ABIERTO, si el apostador no existe o si su
-     *         saldo es insuficiente para cubrir el monto de la apuesta
+     *         asociado no está en estado ABIERTO, si el apostador no existe, si su cuenta
+     *         no está ACTIVA o si su saldo es insuficiente para cubrir el monto de la apuesta
      */
     @Transactional
     public Apuesta crear(Apuesta apuesta) {
@@ -78,6 +79,10 @@ public class ApuestaService {
 
         Usuario apostador = usuarioRepository.findById(apuesta.getApostador().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario apostador no encontrado"));
+
+        if (apostador.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new IllegalArgumentException("El usuario no puede realizar apuestas: cuenta suspendida o eliminada");
+        }
 
         double saldoActual = apostador.getSaldo() != null ? apostador.getSaldo() : 0.0;
         if (saldoActual < apuesta.getMonto()) {

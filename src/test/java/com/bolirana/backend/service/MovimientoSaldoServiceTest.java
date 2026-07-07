@@ -1,5 +1,6 @@
 package com.bolirana.backend.service;
 
+import com.bolirana.backend.domain.EstadoUsuario;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.Usuario;
 import com.bolirana.backend.repository.MovimientoSaldoRepository;
@@ -222,6 +223,7 @@ class MovimientoSaldoServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
         usuario.setSaldo(10000.0);
+        usuario.setEstado(EstadoUsuario.ACTIVO);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
@@ -249,11 +251,31 @@ class MovimientoSaldoServiceTest {
     }
 
     @Test
+    @DisplayName("recargar() con usuario no ACTIVO lanza IllegalArgumentException sin crear el movimiento")
+    void recargar_usuarioNoActivo_lanzaExcepcionSinCrearMovimiento() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setSaldo(10000.0);
+        usuario.setEstado(EstadoUsuario.SUSPENDIDO);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> movimientoSaldoService.recargar(1L, 5000.0, "NEQUI"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El usuario no puede realizar movimientos de saldo: cuenta suspendida o eliminada");
+
+        assertThat(usuario.getSaldo()).isEqualTo(10000.0);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+        verify(usuarioRepository, never()).save(usuario);
+    }
+
+    @Test
     @DisplayName("retirar() con saldo suficiente resta el saldo y crea el movimiento RETIRO")
     void retirar_saldoSuficiente_restaSaldoYCreaMovimiento() {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
         usuario.setSaldo(10000.0);
+        usuario.setEstado(EstadoUsuario.ACTIVO);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
@@ -275,6 +297,7 @@ class MovimientoSaldoServiceTest {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
         usuario.setSaldo(1000.0);
+        usuario.setEstado(EstadoUsuario.ACTIVO);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
@@ -297,5 +320,24 @@ class MovimientoSaldoServiceTest {
                 .hasMessage("Usuario no encontrado");
 
         verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
+    @DisplayName("retirar() con usuario no ACTIVO lanza IllegalArgumentException sin guardar")
+    void retirar_usuarioNoActivo_lanzaExcepcionSinGuardar() {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setSaldo(10000.0);
+        usuario.setEstado(EstadoUsuario.ELIMINADO);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El usuario no puede realizar movimientos de saldo: cuenta suspendida o eliminada");
+
+        assertThat(usuario.getSaldo()).isEqualTo(10000.0);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+        verify(usuarioRepository, never()).save(usuario);
     }
 }

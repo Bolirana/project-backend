@@ -1,5 +1,6 @@
 package com.bolirana.backend.service;
 
+import com.bolirana.backend.domain.EstadoUsuario;
 import com.bolirana.backend.domain.MovimientoSaldo;
 import com.bolirana.backend.domain.Usuario;
 import com.bolirana.backend.repository.MovimientoSaldoRepository;
@@ -68,7 +69,8 @@ public class MovimientoSaldoService {
      * @param monto      monto a recargar
      * @param metodoPago método de pago utilizado (NEQUI, PSE o TARJETA)
      * @return el movimiento de saldo creado y persistido
-     * @throws IllegalArgumentException si el usuario no existe o el método de pago no es válido
+     * @throws IllegalArgumentException si el usuario no existe, su cuenta no está ACTIVA
+     *         o el método de pago no es válido
      */
     @Transactional
     public MovimientoSaldo recargar(Long usuarioId, Double monto, String metodoPago) {
@@ -76,11 +78,16 @@ public class MovimientoSaldoService {
             throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
         }
 
-        Usuario usuarioRef = new Usuario();
-        usuarioRef.setId(usuarioId);
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (usuario.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new IllegalArgumentException(
+                    "El usuario no puede realizar movimientos de saldo: cuenta suspendida o eliminada");
+        }
 
         MovimientoSaldo movimiento = new MovimientoSaldo();
-        movimiento.setUsuario(usuarioRef);
+        movimiento.setUsuario(usuario);
         movimiento.setTipo("RECARGA");
         movimiento.setMonto(monto);
         movimiento.setMetodoPago(metodoPago);
@@ -94,12 +101,18 @@ public class MovimientoSaldoService {
      * @param usuarioId identificador del usuario a retirar
      * @param monto     monto a retirar
      * @return el movimiento de saldo creado y persistido
-     * @throws IllegalArgumentException si el usuario no existe o no tiene saldo suficiente
+     * @throws IllegalArgumentException si el usuario no existe, su cuenta no está ACTIVA
+     *         o no tiene saldo suficiente
      */
     @Transactional
     public MovimientoSaldo retirar(Long usuarioId, Double monto) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (usuario.getEstado() != EstadoUsuario.ACTIVO) {
+            throw new IllegalArgumentException(
+                    "El usuario no puede realizar movimientos de saldo: cuenta suspendida o eliminada");
+        }
 
         double saldoActual = usuario.getSaldo() != null ? usuario.getSaldo() : 0.0;
         if (saldoActual < monto) {

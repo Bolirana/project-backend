@@ -98,14 +98,19 @@ public class MovimientoSaldoService {
     /**
      * Retira saldo de un usuario, validando que tenga saldo suficiente.
      *
-     * @param usuarioId identificador del usuario a retirar
-     * @param monto     monto a retirar
+     * @param usuarioId  identificador del usuario a retirar
+     * @param monto      monto a retirar
+     * @param metodoPago método de retiro utilizado (NEQUI, PSE o TARJETA)
      * @return el movimiento de saldo creado y persistido
-     * @throws IllegalArgumentException si el usuario no existe, su cuenta no está ACTIVA
-     *         o no tiene saldo suficiente
+     * @throws IllegalArgumentException si el método de pago no es válido, el usuario no existe,
+     *         su cuenta no está ACTIVA o no tiene saldo suficiente
      */
     @Transactional
-    public MovimientoSaldo retirar(Long usuarioId, Double monto) {
+    public MovimientoSaldo retirar(Long usuarioId, Double monto, String metodoPago) {
+        if (!METODOS_PAGO_VALIDOS.contains(metodoPago)) {
+            throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
+        }
+
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
@@ -123,6 +128,7 @@ public class MovimientoSaldoService {
         movimiento.setUsuario(usuario);
         movimiento.setTipo("RETIRO");
         movimiento.setMonto(monto);
+        movimiento.setMetodoPago(metodoPago);
 
         return crear(movimiento);
     }

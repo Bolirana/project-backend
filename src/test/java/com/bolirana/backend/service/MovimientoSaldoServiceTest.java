@@ -281,7 +281,7 @@ class MovimientoSaldoServiceTest {
         when(movimientoSaldoRepository.save(any(MovimientoSaldo.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
 
-        movimientoSaldoService.retirar(1L, 4000.0);
+        movimientoSaldoService.retirar(1L, 4000.0, "NEQUI");
 
         assertThat(usuario.getSaldo()).isEqualTo(6000.0);
 
@@ -289,6 +289,17 @@ class MovimientoSaldoServiceTest {
         verify(movimientoSaldoRepository).save(captor.capture());
         assertThat(captor.getValue().getTipo()).isEqualTo("RETIRO");
         assertThat(captor.getValue().getMonto()).isEqualTo(4000.0);
+        assertThat(captor.getValue().getMetodoPago()).isEqualTo("NEQUI");
+    }
+
+    @Test
+    @DisplayName("retirar() con metodoPago inválido lanza IllegalArgumentException sin tocar los repositorios")
+    void retirar_metodoPagoInvalido_lanzaExcepcionSinTocarRepositorios() {
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0, "BITCOIN"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Método de pago no válido: BITCOIN");
+
+        verifyNoInteractions(usuarioRepository, movimientoSaldoRepository);
     }
 
     @Test
@@ -301,7 +312,7 @@ class MovimientoSaldoServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
-        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0))
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0, "NEQUI"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Saldo insuficiente para realizar el retiro");
 
@@ -315,7 +326,7 @@ class MovimientoSaldoServiceTest {
     void retirar_usuarioInexistente_lanzaExcepcionSinGuardar() {
         when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> movimientoSaldoService.retirar(99L, 1000.0))
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(99L, 1000.0, "NEQUI"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Usuario no encontrado");
 
@@ -332,7 +343,7 @@ class MovimientoSaldoServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
-        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0))
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0, "NEQUI"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El usuario no puede realizar movimientos de saldo: cuenta suspendida o eliminada");
 

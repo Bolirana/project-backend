@@ -66,14 +66,15 @@ public class MovimientoSaldoController {
     }
 
     /**
-     * Retira saldo de un usuario, validando que tenga saldo suficiente.
+     * Retira saldo de un usuario mediante Nequi, PSE o Tarjeta, validando que tenga saldo suficiente.
      *
-     * @param request datos del retiro (usuarioId, monto)
+     * @param request datos del retiro (usuarioId, monto, metodoPago)
      * @return 201 con el movimiento de saldo creado
      */
     @PostMapping("/retirar")
     public ResponseEntity<MovimientoSaldo> retirar(@RequestBody RetiroRequest request) {
-        MovimientoSaldo creado = movimientoSaldoService.retirar(request.usuarioId(), request.monto());
+        MovimientoSaldo creado = movimientoSaldoService.retirar(
+                request.usuarioId(), request.monto(), request.metodoPago());
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 }

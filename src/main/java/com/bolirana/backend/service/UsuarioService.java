@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.Optional;
 
@@ -103,6 +105,9 @@ public class UsuarioService {
         }
         if (request.getFechaNacimiento() == null) {
             throw new IllegalArgumentException("La fecha de nacimiento es obligatoria");
+        }
+        if (Period.between(request.getFechaNacimiento(), LocalDate.now()).getYears() < 18) {
+            throw new IllegalArgumentException("Debes ser mayor de 18 años para registrarte");
         }
     }
 

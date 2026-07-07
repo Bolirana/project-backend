@@ -139,6 +139,20 @@ class UsuarioServiceTest {
     }
 
     @Test
+    @DisplayName("registrar lanza IllegalArgumentException si el usuario es menor de 18 años")
+    void registrar_menorDeEdad_lanzaExcepcion() {
+
+        RegistroUsuarioRequest request = new RegistroUsuarioRequest(
+                "Ana Torres", "ana@correo.com", "clave123", LocalDate.now().minusYears(17));
+
+        assertThatThrownBy(() -> usuarioService.registrar(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Debes ser mayor de 18 años para registrarte");
+
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
     @DisplayName("login retorna el usuario cuando las credenciales son correctas y la cuenta esta activa")
     void login_credencialesValidasYCuentaActiva_retornaUsuario() {
 

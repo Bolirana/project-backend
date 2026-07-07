@@ -2,6 +2,8 @@ package com.bolirana.backend.controller;
 
 import com.bolirana.backend.domain.Apuesta;
 import com.bolirana.backend.domain.EstadoApuesta;
+import com.bolirana.backend.dto.ApuestaRespuestaDTO;
+import com.bolirana.backend.dto.HistorialApostadorRespuestaDTO;
 import com.bolirana.backend.dto.HistorialApostadorResponse;
 import com.bolirana.backend.dto.LiquidarEventoRequest;
 import com.bolirana.backend.dto.ResolverApuestaRequest;
@@ -31,8 +33,8 @@ public class ApuestaController {
 
     /** Retorna la lista de todas las apuestas registradas en el sistema. */
     @GetMapping
-    public List<Apuesta> listar() {
-        return apuestaService.listar();
+    public List<ApuestaRespuestaDTO> listar() {
+        return apuestaService.listar().stream().map(ApuestaRespuestaDTO::desdeEntidad).toList();
     }
 
     /**
@@ -42,8 +44,9 @@ public class ApuestaController {
      * @return 200 con la apuesta si existe, 404 si no se encuentra
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Apuesta> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<ApuestaRespuestaDTO> buscarPorId(@PathVariable Long id) {
         return apuestaService.buscarPorId(id)
+                .map(ApuestaRespuestaDTO::desdeEntidad)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -56,8 +59,11 @@ public class ApuestaController {
      * @return el saldo actual, las apuestas y los movimientos de saldo del apostador
      */
     @GetMapping("/usuario/{id}")
-    public HistorialApostadorResponse listarPorApostador(@PathVariable Long id) {
-        return apuestaService.obtenerHistorialApostador(id);
+    public HistorialApostadorRespuestaDTO listarPorApostador(@PathVariable Long id) {
+        HistorialApostadorResponse historial = apuestaService.obtenerHistorialApostador(id);
+        List<ApuestaRespuestaDTO> apuestas =
+                historial.apuestas().stream().map(ApuestaRespuestaDTO::desdeEntidad).toList();
+        return new HistorialApostadorRespuestaDTO(historial.saldo(), apuestas, historial.movimientos());
     }
 
     /**
@@ -67,9 +73,9 @@ public class ApuestaController {
      * @return 201 con la apuesta creada
      */
     @PostMapping
-    public ResponseEntity<Apuesta> crear(@RequestBody Apuesta apuesta) {
+    public ResponseEntity<ApuestaRespuestaDTO> crear(@RequestBody Apuesta apuesta) {
         Apuesta creada = apuestaService.crear(apuesta);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creada);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApuestaRespuestaDTO.desdeEntidad(creada));
     }
 
     /**
@@ -80,9 +86,10 @@ public class ApuestaController {
      * @return 200 con la apuesta actualizada
      */
     @PatchMapping("/{id}/resolver")
-    public ResponseEntity<Apuesta> resolver(@PathVariable Long id, @RequestBody ResolverApuestaRequest request) {
+    public ResponseEntity<ApuestaRespuestaDTO> resolver(
+            @PathVariable Long id, @RequestBody ResolverApuestaRequest request) {
         Apuesta actualizada = apuestaService.resolver(id, request.resultado());
-        return ResponseEntity.ok(actualizada);
+        return ResponseEntity.ok(ApuestaRespuestaDTO.desdeEntidad(actualizada));
     }
 
     /**
@@ -92,9 +99,9 @@ public class ApuestaController {
      * @return 200 con la apuesta actualizada
      */
     @PatchMapping("/{id}/pagar")
-    public ResponseEntity<Apuesta> pagar(@PathVariable Long id) {
+    public ResponseEntity<ApuestaRespuestaDTO> pagar(@PathVariable Long id) {
         Apuesta actualizada = apuestaService.pagar(id);
-        return ResponseEntity.ok(actualizada);
+        return ResponseEntity.ok(ApuestaRespuestaDTO.desdeEntidad(actualizada));
     }
 
     /**
@@ -105,9 +112,12 @@ public class ApuestaController {
      * @return 200 con las apuestas del evento tras la liquidación
      */
     @PostMapping("/liquidar")
-    public ResponseEntity<List<Apuesta>> liquidar(@RequestBody LiquidarEventoRequest request) {
-        List<Apuesta> apuestasLiquidadas =
-                apuestaService.liquidarEvento(request.eventoId(), request.opcionGanadoraId());
+    public ResponseEntity<List<ApuestaRespuestaDTO>> liquidar(@RequestBody LiquidarEventoRequest request) {
+        List<ApuestaRespuestaDTO> apuestasLiquidadas = apuestaService
+                .liquidarEvento(request.eventoId(), request.opcionGanadoraId())
+                .stream()
+                .map(ApuestaRespuestaDTO::desdeEntidad)
+                .toList();
         return ResponseEntity.ok(apuestasLiquidadas);
     }
 
@@ -125,12 +135,15 @@ public class ApuestaController {
      * @return las apuestas que cumplen todos los filtros indicados
      */
     @GetMapping("/historial")
-    public List<Apuesta> historial(
+    public List<ApuestaRespuestaDTO> historial(
             @RequestParam(required = false) Long apostadorId,
             @RequestParam(required = false) Long eventoId,
             @RequestParam(required = false) EstadoApuesta estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
-        return apuestaService.buscarHistorial(apostadorId, eventoId, estado, fechaDesde, fechaHasta);
+        return apuestaService.buscarHistorial(apostadorId, eventoId, estado, fechaDesde, fechaHasta)
+                .stream()
+                .map(ApuestaRespuestaDTO::desdeEntidad)
+                .toList();
     }
 }

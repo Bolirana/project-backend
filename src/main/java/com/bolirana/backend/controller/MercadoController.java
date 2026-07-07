@@ -6,6 +6,7 @@ import com.bolirana.backend.domain.OpcionApuesta;
 import com.bolirana.backend.service.MercadoService;
 import com.bolirana.backend.dto.CambioCuotaDTO;
 import com.bolirana.backend.dto.HistorialCuotaDTO;
+import com.bolirana.backend.dto.MercadoResumenDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,8 @@ public class MercadoController {
 
     /** Retorna la lista de todos los mercados registrados en el sistema. */
     @GetMapping
-    public List<Mercado> listar() {
-        return mercadoService.listar();
+    public List<MercadoResumenDTO> listar() {
+        return mercadoService.listar().stream().map(MercadoResumenDTO::desdeEntidad).toList();
     }
 
     /**
@@ -39,9 +40,9 @@ public class MercadoController {
      * @return 200 con el mercado
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Mercado> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<MercadoResumenDTO> buscarPorId(@PathVariable Long id) {
         Mercado mercado = mercadoService.buscarPorId(id);
-        return ResponseEntity.ok(mercado);
+        return ResponseEntity.ok(MercadoResumenDTO.desdeEntidad(mercado));
     }
 
     /**
@@ -51,9 +52,9 @@ public class MercadoController {
      * @return 201 con el mercado creado
      */
     @PostMapping
-    public ResponseEntity<Mercado> crear(@RequestBody Mercado mercado) {
+    public ResponseEntity<MercadoResumenDTO> crear(@RequestBody Mercado mercado) {
         Mercado creado = mercadoService.crear(mercado);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(MercadoResumenDTO.desdeEntidad(creado));
     }
 
     /**

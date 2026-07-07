@@ -15,7 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovimientoSaldoService {
 
-    private static final List<String> METODOS_PAGO_VALIDOS = List.of("NEQUI", "PSE", "TARJETA");
+    private static final List<String> METODOS_RECARGA_VALIDOS = List.of("NEQUI", "PSE", "TARJETA");
+    private static final List<String> METODOS_RETIRO_VALIDOS = List.of("NEQUI", "TARJETA");
 
     private final MovimientoSaldoRepository movimientoSaldoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -74,7 +75,7 @@ public class MovimientoSaldoService {
      */
     @Transactional
     public MovimientoSaldo recargar(Long usuarioId, Double monto, String metodoPago) {
-        if (!METODOS_PAGO_VALIDOS.contains(metodoPago)) {
+        if (!METODOS_RECARGA_VALIDOS.contains(metodoPago)) {
             throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
         }
 
@@ -100,14 +101,14 @@ public class MovimientoSaldoService {
      *
      * @param usuarioId  identificador del usuario a retirar
      * @param monto      monto a retirar
-     * @param metodoPago método de retiro utilizado (NEQUI, PSE o TARJETA)
+     * @param metodoPago método de retiro utilizado (NEQUI o TARJETA; PSE no está disponible para retiros)
      * @return el movimiento de saldo creado y persistido
      * @throws IllegalArgumentException si el método de pago no es válido, el usuario no existe,
      *         su cuenta no está ACTIVA o no tiene saldo suficiente
      */
     @Transactional
     public MovimientoSaldo retirar(Long usuarioId, Double monto, String metodoPago) {
-        if (!METODOS_PAGO_VALIDOS.contains(metodoPago)) {
+        if (!METODOS_RETIRO_VALIDOS.contains(metodoPago)) {
             throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
         }
 

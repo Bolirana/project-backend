@@ -303,6 +303,16 @@ class MovimientoSaldoServiceTest {
     }
 
     @Test
+    @DisplayName("retirar() con metodoPago PSE lanza IllegalArgumentException porque PSE no está disponible para retiros")
+    void retirar_metodoPagoPse_lanzaExcepcionSinTocarRepositorios() {
+        assertThatThrownBy(() -> movimientoSaldoService.retirar(1L, 5000.0, "PSE"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Método de pago no válido: PSE");
+
+        verifyNoInteractions(usuarioRepository, movimientoSaldoRepository);
+    }
+
+    @Test
     @DisplayName("retirar() con saldo insuficiente lanza IllegalArgumentException sin guardar")
     void retirar_saldoInsuficiente_lanzaExcepcionSinGuardar() {
         Usuario usuario = new Usuario();

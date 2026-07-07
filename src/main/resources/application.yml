@@ -16,3 +16,10 @@ spring:
         format_sql: true
   application:
     name: bolirana-backend
+apis:
+  odds:
+    base-url: ${ODDS_API_BASE_URL:https://api.the-odds-api.com/v4}
+    api-key: ${ODDS_API_KEY:}
+  thesportsdb:
+    base-url: ${THESPORTSDB_BASE_URL:https://www.thesportsdb.com/api/v1/json}
+    api-key: ${THESPORTSDB_API_KEY:}

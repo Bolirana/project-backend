@@ -350,11 +350,24 @@ class ApuestaServiceTest {
         verify(apuestaRepository, never()).save(apuesta);
     }
 
+    private static OpcionApuesta opcionConEstadoEvento(EstadoEvento estadoEvento) {
+        Evento evento = new Evento();
+        evento.setEstado(estadoEvento);
+
+        Mercado mercado = new Mercado();
+        mercado.setEvento(evento);
+
+        OpcionApuesta opcion = new OpcionApuesta();
+        opcion.setMercado(mercado);
+        return opcion;
+    }
+
     @Test
     @DisplayName("pagar() acredita monto * cuotaCongelada al apostador y transiciona la apuesta a PAGADA")
     void pagar_apuestaGanada_acreditaMontoYTransicionaAPagada() {
         Usuario apostador = apostadorConSaldo(1L, 10000.0);
         Apuesta apuesta = apuestaConEstado(5L, EstadoApuesta.GANADA, apostador, 5000.0, 2.5);
+        apuesta.setOpcion(opcionConEstadoEvento(EstadoEvento.LIQUIDADO));
 
         when(apuestaRepository.findById(5L)).thenReturn(Optional.of(apuesta));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(apostador));
@@ -402,25 +415,47 @@ class ApuestaServiceTest {
     }
 
     @Test
+    @DisplayName("pagar() lanza IllegalArgumentException cuando el evento asociado no está LIQUIDADO (RF-11)")
+    void pagar_eventoNoLiquidado_lanzaExcepcion() {
+        Apuesta apuesta = apuestaConEstado(7L, EstadoApuesta.GANADA, apostadorConSaldo(1L, 10000.0), 5000.0, 2.0);
+        apuesta.setOpcion(opcionConEstadoEvento(EstadoEvento.CERRADO));
+
+        when(apuestaRepository.findById(7L)).thenReturn(Optional.of(apuesta));
+
+        assertThatThrownBy(() -> apuestaService.pagar(7L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Solo se puede pagar una apuesta cuyo evento ya está LIQUIDADO");
+
+        verify(apuestaRepository, never()).save(apuesta);
+        verify(movimientoSaldoRepository, never()).save(any(MovimientoSaldo.class));
+    }
+
+    @Test
     @DisplayName("liquidarEvento() resuelve GANADA/PERDIDA según la opción ganadora, paga la ganadora "
             + "y transiciona el evento a LIQUIDADO")
     void liquidarEvento_conApuestasRegistradas_resuelveYPagaGanadorasYLiquidaEvento() {
         Usuario apostadorGanador = apostadorConSaldo(20L, 10000.0);
         Usuario apostadorPerdedor = apostadorConSaldo(21L, 10000.0);
 
+        // El mercado de ambas opciones apunta al mismo objeto Evento que devuelve el
+        // repositorio mockeado: al mutarlo cambiarEstado(LIQUIDADO), pagar() lo ve LIQUIDADO.
+        Evento evento = eventoConEstado(50L, EstadoEvento.CERRADO);
+        Mercado mercado = new Mercado();
+        mercado.setEvento(evento);
+
         OpcionApuesta opcionGanadora = new OpcionApuesta();
         opcionGanadora.setId(100L);
+        opcionGanadora.setMercado(mercado);
 
         OpcionApuesta opcionPerdedora = new OpcionApuesta();
         opcionPerdedora.setId(200L);
+        opcionPerdedora.setMercado(mercado);
 
         Apuesta apuestaGanadora = apuestaConEstado(1L, EstadoApuesta.REGISTRADA, apostadorGanador, 5000.0, 2.0);
         apuestaGanadora.setOpcion(opcionGanadora);
 
         Apuesta apuestaPerdedora = apuestaConEstado(2L, EstadoApuesta.REGISTRADA, apostadorPerdedor, 3000.0, 1.5);
         apuestaPerdedora.setOpcion(opcionPerdedora);
-
-        Evento evento = eventoConEstado(50L, EstadoEvento.CERRADO);
 
         when(apuestaRepository.findByOpcionMercadoEventoIdAndEstado(50L, EstadoApuesta.REGISTRADA))
                 .thenReturn(List.of(apuestaGanadora, apuestaPerdedora));

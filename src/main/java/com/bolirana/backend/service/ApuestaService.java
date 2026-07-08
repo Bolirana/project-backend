@@ -137,7 +137,8 @@ public class ApuestaService {
      *
      * @param apuestaId identificador de la apuesta a pagar
      * @return la apuesta actualizada
-     * @throws IllegalArgumentException si la apuesta no existe o no está en estado GANADA
+     * @throws IllegalArgumentException si la apuesta no existe, no está en estado GANADA,
+     *         o el evento asociado aún no está en estado LIQUIDADO
      */
     @Transactional
     public Apuesta pagar(Long apuestaId) {
@@ -146,6 +147,11 @@ public class ApuestaService {
 
         if (apuesta.getEstado() != EstadoApuesta.GANADA) {
             throw new IllegalArgumentException("Solo se puede pagar una apuesta en estado GANADA");
+        }
+
+        EstadoEvento estadoEvento = apuesta.getOpcion().getMercado().getEvento().getEstado();
+        if (estadoEvento != EstadoEvento.LIQUIDADO) {
+            throw new IllegalArgumentException("Solo se puede pagar una apuesta cuyo evento ya está LIQUIDADO");
         }
 
         double montoAPagar = apuesta.getMonto() * apuesta.getCuotaCongelada();
@@ -161,10 +167,11 @@ public class ApuestaService {
     }
 
     /**
-     * RF-15: Liquida un evento resolviendo todas sus apuestas REGISTRADA:
-     * las que apostaron a la opción ganadora quedan GANADA y se pagan
-     * automáticamente; el resto queda PERDIDA. Al final transiciona el
-     * evento a LIQUIDADO.
+     * RF-15: Liquida un evento transicionándolo primero a LIQUIDADO y luego
+     * resolviendo todas sus apuestas REGISTRADA: las que apostaron a la opción
+     * ganadora quedan GANADA y se pagan automáticamente; el resto queda PERDIDA.
+     * El evento se liquida antes de resolver/pagar porque {@link #pagar(Long)}
+     * exige que el evento asociado ya esté LIQUIDADO (RF-11).
      *
      * @param eventoId         identificador del evento a liquidar
      * @param opcionGanadoraId identificador de la opción de apuesta ganadora
@@ -177,6 +184,8 @@ public class ApuestaService {
         List<Apuesta> apuestasRegistradas =
                 apuestaRepository.findByOpcionMercadoEventoIdAndEstado(eventoId, EstadoApuesta.REGISTRADA);
 
+        eventoService.cambiarEstado(eventoId, EstadoEvento.LIQUIDADO);
+
         List<Apuesta> apuestasLiquidadas = new ArrayList<>();
         for (Apuesta apuesta : apuestasRegistradas) {
             boolean gano = apuesta.getOpcion().getId().equals(opcionGanadoraId);
@@ -188,8 +197,6 @@ public class ApuestaService {
 
             apuestasLiquidadas.add(resuelta);
         }
-
-        eventoService.cambiarEstado(eventoId, EstadoEvento.LIQUIDADO);
 
         return apuestasLiquidadas;
     }

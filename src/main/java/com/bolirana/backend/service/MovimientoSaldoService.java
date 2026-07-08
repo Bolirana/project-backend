@@ -70,11 +70,15 @@ public class MovimientoSaldoService {
      * @param monto      monto a recargar
      * @param metodoPago método de pago utilizado (NEQUI, PSE o TARJETA)
      * @return el movimiento de saldo creado y persistido
-     * @throws IllegalArgumentException si el usuario no existe, su cuenta no está ACTIVA
-     *         o el método de pago no es válido
+     * @throws IllegalArgumentException si el monto no es mayor a cero, el usuario no existe,
+     *         su cuenta no está ACTIVA o el método de pago no es válido
      */
     @Transactional
     public MovimientoSaldo recargar(Long usuarioId, Double monto, String metodoPago) {
+        if (monto == null || monto <= 0) {
+            throw new IllegalArgumentException("El monto de recarga debe ser mayor a cero");
+        }
+
         if (!METODOS_RECARGA_VALIDOS.contains(metodoPago)) {
             throw new IllegalArgumentException("Método de pago no válido: " + metodoPago);
         }

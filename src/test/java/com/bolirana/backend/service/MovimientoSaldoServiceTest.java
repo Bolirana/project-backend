@@ -241,6 +241,16 @@ class MovimientoSaldoServiceTest {
     }
 
     @Test
+    @DisplayName("recargar() con monto no positivo lanza IllegalArgumentException sin tocar los repositorios (RNF-08)")
+    void recargar_montoNoPositivo_lanzaExcepcionSinTocarRepositorios() {
+        assertThatThrownBy(() -> movimientoSaldoService.recargar(1L, 0.0, "NEQUI"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El monto de recarga debe ser mayor a cero");
+
+        verifyNoInteractions(usuarioRepository, movimientoSaldoRepository);
+    }
+
+    @Test
     @DisplayName("recargar() con metodoPago inválido lanza IllegalArgumentException sin tocar los repositorios")
     void recargar_metodoPagoInvalido_lanzaExcepcionSinTocarRepositorios() {
         assertThatThrownBy(() -> movimientoSaldoService.recargar(1L, 5000.0, "BITCOIN"))

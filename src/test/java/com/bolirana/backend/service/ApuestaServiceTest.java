@@ -136,6 +136,20 @@ class ApuestaServiceTest {
     }
 
     @Test
+    @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando el monto no es mayor a cero (RNF-08)")
+    void crear_montoNoPositivo_lanzaExcepcionSinGuardar() {
+        Apuesta apuesta = new Apuesta();
+        apuesta.setMonto(0.0);
+
+        assertThatThrownBy(() -> apuestaService.crear(apuesta))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El monto de la apuesta debe ser mayor a cero");
+
+        verify(opcionApuestaRepository, never()).findById(any());
+        verify(apuestaRepository, never()).save(any(Apuesta.class));
+    }
+
+    @Test
     @DisplayName("crear() lanza IllegalArgumentException y no llama a save() cuando la opción no existe")
     void crear_opcionInexistente_lanzaExcepcionSinGuardar() {
         // Caso límite: el id de opción no existe en la base de datos, la apuesta no debe persistirse

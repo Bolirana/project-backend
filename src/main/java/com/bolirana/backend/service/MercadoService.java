@@ -65,9 +65,15 @@ public class MercadoService {
      * RF-23: Cambia la cuota final de una opción de apuesta, validando
      * que el evento al que pertenece esté en estado ABIERTO, y registra
      * el cambio (cuota anterior y nueva) en el historial.
+     *
+     * @throws ValidacionNegocioException si nuevaCuota es nula o no es mayor a 1.0 (RNF-08)
      */
     @Transactional
     public OpcionApuesta cambiarCuota(Long opcionApuestaId, BigDecimal nuevaCuota) {
+        if (nuevaCuota == null || nuevaCuota.compareTo(BigDecimal.ONE) <= 0) {
+            throw new ValidacionNegocioException("La cuota debe ser mayor a 1.0");
+        }
+
         OpcionApuesta opcion = opcionApuestaRepository.findById(opcionApuestaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No se encontró la opción de apuesta con id " + opcionApuestaId));

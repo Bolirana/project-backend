@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -33,6 +34,10 @@ public class EventoService {
      */
     @Transactional
     public Evento crearEvento(EventoCreacionDTO dto) {
+        if (dto.getFechaEvento() != null && dto.getFechaEvento().isBefore(LocalDate.now())) {
+            throw new ValidacionNegocioException("La fecha del evento no puede ser anterior a la fecha actual");
+        }
+
         if (dto.getMercados() == null || dto.getMercados().isEmpty()) {
             throw new ValidacionNegocioException("El evento debe tener al menos un mercado con sus opciones de apuesta");
         }

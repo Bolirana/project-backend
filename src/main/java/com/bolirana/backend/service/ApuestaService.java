@@ -63,12 +63,17 @@ public class ApuestaService {
      *
      * @param apuesta datos de la apuesta a registrar
      * @return la apuesta creada y persistida
-     * @throws IllegalArgumentException si la opción de apuesta no existe, si el evento
-     *         asociado no está en estado ABIERTO, si el apostador no existe, si su cuenta
-     *         no está ACTIVA o si su saldo es insuficiente para cubrir el monto de la apuesta
+     * @throws IllegalArgumentException si el monto no es mayor a cero, si la opción de apuesta
+     *         no existe, si el evento asociado no está en estado ABIERTO, si el apostador no
+     *         existe, si su cuenta no está ACTIVA o si su saldo es insuficiente para cubrir
+     *         el monto de la apuesta
      */
     @Transactional
     public Apuesta crear(Apuesta apuesta) {
+        if (apuesta.getMonto() == null || apuesta.getMonto() <= 0) {
+            throw new IllegalArgumentException("El monto de la apuesta debe ser mayor a cero");
+        }
+
         OpcionApuesta opcion = opcionApuestaRepository.findById(apuesta.getOpcion().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Opcion de apuesta no encontrada"));
 

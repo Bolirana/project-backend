@@ -3,6 +3,7 @@ package com.bolirana.backend.builder;
 import com.bolirana.backend.domain.Evento;
 import com.bolirana.backend.domain.Mercado;
 import com.bolirana.backend.domain.OpcionApuesta;
+import com.bolirana.backend.exception.ValidacionNegocioException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -104,8 +105,14 @@ public class EventoBuilder {
          * Agrega una opción de apuesta. La cuotaReferencia (de The Odds API)
          * solo se usa como guía y NO se persiste; cuotaActual (RF-18, > 1.0)
          * es la que se guarda en opcion_apuesta.cuota_actual.
+         *
+         * @throws ValidacionNegocioException si cuotaActual es nula o no es mayor a 1.0
          */
         public MercadoBuilder agregarOpcion(String nombre, BigDecimal cuotaReferencia, BigDecimal cuotaActual) {
+            if (cuotaActual == null || cuotaActual.compareTo(BigDecimal.ONE) <= 0) {
+                throw new ValidacionNegocioException("La cuota debe ser mayor a 1.0");
+            }
+
             OpcionApuesta opcion = new OpcionApuesta(nombre, cuotaActual);
             mercado.agregarOpcion(opcion);
             return this;
